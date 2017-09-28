@@ -25,27 +25,26 @@ void CollectionSetting::initCheckArrayUI()
     radioArray.resize(MainWindow::passSize);
     lineArray.resize(MainWindow::passSize);
     for(int i = 0; i < radioArray.size(); i++){
-        QLabel                 *label      = new QLabel(QString("No.%1").arg(i+1));
-        QRadioButton    *zhiBtn    = new QRadioButton(tr("交流"));
-        QRadioButton    *jiaoBtn   = new QRadioButton(tr("直流"));
-        QLineEdit           *lineEdit   = new QLineEdit();
+        QLabel          *label      = new QLabel(QString("No.%1").arg(i+1));
+        SwitchButton    *sbtn       = new SwitchButton(this);
+        QLineEdit       *lineEdit   = new QLineEdit();
+
         label->setFixedWidth(40);
+        sbtn->setButtonStyle(SwitchButton::ButtonStyle::ButtonStyle_Rect);
+        sbtn->setText("交流", "直流");
+        sbtn->setFixedWidth(60);
+
         lineEdit->setReadOnly(true);
         lineEdit->setAlignment(Qt::AlignLeft);
-        jiaoBtn->setChecked(true);
         lineEdit->setFixedWidth(80);
 
-        QButtonGroup *btnGroup = new QButtonGroup();
-        btnGroup->addButton(zhiBtn, 1);
-        btnGroup->addButton(jiaoBtn, 2);
 
-        radioArray[i] =     btnGroup;
+        radioArray[i]   =     sbtn;
         lineArray[i]    =     lineEdit;
 
         QHBoxLayout *pHBoxLayout = new QHBoxLayout();
         pHBoxLayout->addWidget(label);
-        pHBoxLayout->addWidget(zhiBtn);
-        pHBoxLayout->addWidget(jiaoBtn);
+        pHBoxLayout->addWidget(sbtn);
         pHBoxLayout->addWidget(lineEdit, 1, Qt::AlignLeft);
         pVBoxLayout->addLayout(pHBoxLayout);
     }
@@ -143,18 +142,6 @@ void CollectionSetting::initButtonArrayUI()
 }
 void CollectionSetting::initDev()
 {
-    if(deviceOperator == NULL){
-        QSerialPort *serialPort = new QSerialPort();
-        serialPort->setPortName("ttyUSB0");
-        serialPort->setBaudRate(QSerialPort::Baud9600);
-        serialPort->setParity(QSerialPort::EvenParity);
-        serialPort->setDataBits(QSerialPort::Data8);
-        serialPort->setStopBits(QSerialPort::OneStop);
-        serialPort->setFlowControl(QSerialPort::NoFlowControl);
-        deviceOperator = new DeviceOperator(serialPort);
-        serialPort->open(QIODevice::ReadWrite);
-    }
-
     connect(deviceOperator, SIGNAL(deviceInformationGot(bool,DataGatherConfiguration)), this, SLOT(onGotDevInfo(bool,DataGatherConfiguration)));
     connect(deviceOperator, SIGNAL(finishedDevSearching()), this, SLOT(onSearchDeviceFinished()));
     connect(deviceOperator, SIGNAL(finishedDevCalibrate(bool)), this, SLOT(onCalibrateDeviceFinished(bool)));
@@ -196,7 +183,7 @@ void    CollectionSetting::setPassType()
     DataGatherConfiguration newCfg = equArray[modNumBox->currentIndex()];
     newCfg.inputMode = 0;
     for(int i = 0; i < MainWindow::passSize; i++){
-        if(radioArray[i]->button(1)->isChecked()){
+        if(radioArray[i]->getChecked()){
             newCfg.inputMode |=( 0x01U << i);
         }
     }
@@ -277,8 +264,7 @@ void CollectionSetting::updateCheckArray(QString str)
     qDebug()<<"str=" << str << endl;
     DataGatherConfiguration curCfg = equArray[str.toInt() -1];
     for(int i = 0; i < MainWindow::passSize; i++){
-        radioArray[i]->button(1)->setChecked( curCfg.inputMode & (0x01U << i));
-        radioArray[i]->button(2)->setChecked( !curCfg.inputMode & (0x01U << i));
+        radioArray[i]->setChecked( curCfg.inputMode & (0x01U << i));
         //logshow->append(curCfg.inputMode& (0x01U << i) ? "1":"0");    //打印checkArray
     }
     connect(deviceOperator, SIGNAL(deviceADCResultGot(int,uint16_t*)), this, SLOT(updateADCLine(int, uint16_t *)));

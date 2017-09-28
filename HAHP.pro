@@ -22,7 +22,12 @@ SOURCES += main.cpp\
     setting/tableWidget/collectionsetting.cpp \
     setting/tableWidget/zigbeesetting.cpp \
     helper/deviceoperator.cpp \
-    helper/modbuscrc.cpp
+    helper/modbuscrc.cpp \
+    helper/QGauge/qgauge.cpp \
+    helper/QGauge/qgaugedrawfunctions.cpp \
+    helper/QMeter/qmeter.cpp \
+    helper/QMeter/qmeterdrawfunctions.cpp \
+    helper/SwitchButton/switchbutton.cpp
 
 HEADERS  += mainwindow.h \
     passwidget.h \
@@ -38,7 +43,10 @@ HEADERS  += mainwindow.h \
     helper/deviceoperator.h \
     helper/modbuscrc.h \
     helper/deviceregistermap.h \
-    helper/deviceconfiguration.h
+    helper/deviceconfiguration.h \
+    helper/QGauge/qgauge.h \
+    helper/QMeter/qmeter.h \
+    helper/SwitchButton/switchbutton.h
 
 RESOURCES += \
     pic.qrc \

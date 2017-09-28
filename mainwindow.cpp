@@ -14,7 +14,17 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     TIME_OUT    = 5000;
-    deviceOperator = NULL;
+
+    QSerialPort *serialPort = new QSerialPort();
+    serialPort->setPortName("ttyUSB0");
+    serialPort->setBaudRate(QSerialPort::Baud9600);
+    serialPort->setParity(QSerialPort::EvenParity);
+    serialPort->setDataBits(QSerialPort::Data8);
+    serialPort->setStopBits(QSerialPort::OneStop);
+    serialPort->setFlowControl(QSerialPort::NoFlowControl);
+    deviceOperator = new DeviceOperator(serialPort);
+    serialPort->open(QIODevice::ReadWrite);
+    connect(deviceOperator, SIGNAL(deviceADCResultGot(int, uint16_t*)), this, SLOT(recvADCResult(int, uint16_t *)));
 
     flushWidgets(0);//get lasted grid
     showWidget();//show grid widget
@@ -104,7 +114,7 @@ void MainWindow::showWidget()
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->addWidget(frame);
     mainLayout->addLayout(bottomLayout);
-/////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
     QWidget *mainwidget = new QWidget();
     mainwidget->setLayout(mainLayout);
     this->setCentralWidget(mainwidget);
@@ -115,14 +125,12 @@ void MainWindow::startSet()
     if(deviceOperator != NULL && deviceOperator->port->isOpen()){
         killTimer(timeId);
     }
-    disconnect(deviceOperator, SIGNAL(deviceADCResultGot(int, uint16_t*)), this, SLOT(recvADCResult(int, uint16_t *)));
 
     SettingDialog *setting = new SettingDialog();
     this->hide();
     setting->show();
     setting->exec();
 
-    connect(deviceOperator, SIGNAL(deviceADCResultGot(int, uint16_t*)), this, SLOT(recvADCResult(int, uint16_t *)));
     log->clear();
     if(checkSerial()){
         timeId = startTimer(TIME_OUT, Qt::VeryCoarseTimer);

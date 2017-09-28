@@ -16,6 +16,7 @@
 
 #include <QtSerialPort/QSerialPort>
 #include "helper/deviceoperator.h"
+#include "helper/SwitchButton/switchbutton.h"
 
 class CollectionSetting : public QWidget
 {
@@ -26,7 +27,7 @@ public:
     void closeCollection();
     QHBoxLayout *mainLayout;
 
-    QVector<QButtonGroup *>    radioArray;
+    QVector<SwitchButton *>    radioArray;
     QVector<QLineEdit *>            lineArray;
 
     QComboBox   *modNumBox;
