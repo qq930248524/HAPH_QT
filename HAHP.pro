@@ -4,9 +4,12 @@
 #
 #-------------------------------------------------
 
-QT       += core gui serialport
+QT       += core gui serialport widgets network
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+contains(QT_ARCH, armv7) {
+     LIBS += -L/opt/tslib/lib/ -lts
+}
 
 TARGET = HAHP
 TEMPLATE = app
@@ -14,7 +17,6 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    passwidget.cpp \
     timewidget.cpp \
     setting/DMSNavigation.cpp \
     setting/settingdialog.cpp \
@@ -27,14 +29,23 @@ SOURCES += main.cpp\
     helper/QGauge/qgaugedrawfunctions.cpp \
     helper/QMeter/qmeter.cpp \
     helper/QMeter/qmeterdrawfunctions.cpp \
-    helper/SwitchButton/switchbutton.cpp
+    helper/SwitchButton/switchbutton.cpp \
+    helper/mqtt/qmqtt_client_p.cpp \
+    helper/mqtt/qmqtt_client.cpp \
+    helper/mqtt/qmqtt_frame.cpp \
+    helper/mqtt/qmqtt_message.cpp \
+    helper/mqtt/qmqtt_network.cpp \
+    helper/mqtt/qmqtt_router.cpp \
+    helper/mqtt/qmqtt_routesubscription.cpp \
+    helper/mqtt/qmqtt_socket.cpp \
+    helper/mqtt/qmqtt_ssl_socket.cpp \
+    helper/mqtt/qmqtt_timer.cpp
 
 HEADERS  += mainwindow.h \
     passwidget.h \
     timewidget.h \
     DMSNavigation.h \
     setting/DMSNavigation.h \
-    settingwidget.h \
     setting/settingdialog.h \
     setting/tableWidget/systemsetting.h \
     setting/tableWidget/collectionsetting.h \
@@ -46,15 +57,40 @@ HEADERS  += mainwindow.h \
     helper/deviceconfiguration.h \
     helper/QGauge/qgauge.h \
     helper/QMeter/qmeter.h \
-    helper/SwitchButton/switchbutton.h
+    helper/SwitchButton/switchbutton.h \
+    helper/mqtt/qmqtt_client_p.h \
+    helper/mqtt/qmqtt_client.h \
+    helper/mqtt/qmqtt_frame.h \
+    helper/mqtt/qmqtt_global.h \
+    helper/mqtt/qmqtt_message_p.h \
+    helper/mqtt/qmqtt_message.h \
+    helper/mqtt/qmqtt_network_p.h \
+    helper/mqtt/qmqtt_networkinterface.h \
+    helper/mqtt/qmqtt_routedmessage.h \
+    helper/mqtt/qmqtt_router.h \
+    helper/mqtt/qmqtt_routesubscription.h \
+    helper/mqtt/qmqtt_socket_p.h \
+    helper/mqtt/qmqtt_socketinterface.h \
+    helper/mqtt/qmqtt_ssl_socket_p.h \
+    helper/mqtt/qmqtt_timer_p.h \
+    helper/mqtt/qmqtt_timerinterface.h \
+    helper/mqtt/qmqtt.h
 
 RESOURCES += \
-    pic.qrc \
-    passwidget.qrc
+    pic.qrc
 
 FORMS +=
 
-#unix:!macx: LIBS += -L$$PWD/../../../usr/local/tslib/lib/ -lts
+
 
 INCLUDEPATH += $$PWD/../../../usr/local/tslib/include
 DEPENDPATH += $$PWD/../../../usr/local/tslib/include
+
+SUBDIRS += \
+    helper/mqtt/mqtt.pro
+
+DISTFILES += \
+    helper/mqtt/mqtt.pri \
+    helper/mqtt/mqtt.qbs \
+    helper/mqtt/mqttModule.qbs \
+    helper/mqtt/mqtt.pro.user

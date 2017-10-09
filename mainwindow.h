@@ -10,7 +10,7 @@
 #include <QPushButton>
 #include <QSerialPort>
 
-#include "passwidget.h"
+
 #include "helper/deviceconfiguration.h"
 #include "helper/deviceoperator.h"
 

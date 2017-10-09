@@ -125,14 +125,33 @@ void CollectionSetting::initButtonArrayUI()
     vLayout->addWidget(readPassData, 3, Qt::AlignTop);
     vLayout->addWidget(readZigbeeData, 3, Qt::AlignTop);
 
+//    setStyleSheet("QPushButton {"
+//                  "Background:rgb(110, 190, 10);"
+//                  "color:white;"
+//                  "font:bold;"
+//                  "font-size:30px;"
+//                  "font-weight:90px;"
+//                  "border-width:90px;"
+//                  "border-radius:5px;}");
     setStyleSheet("QPushButton {"
-                  "Background:rgb(110, 190, 10);"
-                  "color:white;"
-                  "font:bold;"
-                  "font-size:30px;"
-                  "font-weight:90px;"
-                  "border-width:90px;"
-                  "border-radius:5px;}");
+                  "border: 1px solid #000000;border-radius: 5px;"
+                  "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
+                  "stop: 0 #dedede, "
+                  "stop: 0.5 #434343,"
+                  "stop: 0.51 #000000, "
+                  "stop: 1 #656a6d);"
+                  "color: #FFFFFF;"
+                  "font: bold 20px;"
+                  "min-width: 90px;"
+                  "min-height: 50px}"
+
+                  "QPushButton:pressed {"
+                  "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
+                  "stop: 0 #cfcccc, stop: 0.5 #333232,"
+                  "stop: 0.51 #000000, stop: 1 #585c5f);"
+                  "color: #00CC00;}"
+                  "QPushButton:flat {"
+                  "border: none;}");
 
     QFrame *frame = new QFrame();
     frame->setLayout(vLayout);
