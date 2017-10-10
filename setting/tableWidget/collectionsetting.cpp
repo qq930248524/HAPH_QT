@@ -13,7 +13,7 @@ CollectionSetting::CollectionSetting(QWidget *parent) : QWidget(parent)
     setLayout(mainLayout);
 
     initDev();//初始化串/devOperator
-    if(deviceOperator != NULL && deviceOperator->port->isOpen()){
+    if(helper->deviceOperator != NULL && helper->deviceOperator->port->isOpen()){
         onSearchDeviceFinished();
     }
 }
@@ -161,22 +161,22 @@ void CollectionSetting::initButtonArrayUI()
 }
 void CollectionSetting::initDev()
 {
-    connect(deviceOperator, SIGNAL(deviceInformationGot(bool,DataGatherConfiguration)), this, SLOT(onGotDevInfo(bool,DataGatherConfiguration)));
-    connect(deviceOperator, SIGNAL(finishedDevSearching()), this, SLOT(onSearchDeviceFinished()));
-    connect(deviceOperator, SIGNAL(finishedDevCalibrate(bool)), this, SLOT(onCalibrateDeviceFinished(bool)));
-    connect(deviceOperator, SIGNAL(finishedDevConfigSet(bool)), this, SLOT(onSetDevConfigFinished(bool)));
+    connect(helper->deviceOperator, SIGNAL(deviceInformationGot(bool,DataGatherConfiguration)), this, SLOT(onGotDevInfo(bool,DataGatherConfiguration)));
+    connect(helper->deviceOperator, SIGNAL(finishedDevSearching()), this, SLOT(onSearchDeviceFinished()));
+    connect(helper->deviceOperator, SIGNAL(finishedDevCalibrate(bool)), this, SLOT(onCalibrateDeviceFinished(bool)));
+    connect(helper->deviceOperator, SIGNAL(finishedDevConfigSet(bool)), this, SLOT(onSetDevConfigFinished(bool)));
 
-    connect(deviceOperator,SIGNAL(sendMsg(QByteArray)), this, SLOT(updateSendText(QByteArray)));
-    connect(deviceOperator, SIGNAL(recvMsg(QByteArray)), this, SLOT(updateRecvText(QByteArray)));
+    connect(helper->deviceOperator,SIGNAL(sendMsg(QByteArray)), this, SLOT(updateSendText(QByteArray)));
+    connect(helper->deviceOperator, SIGNAL(recvMsg(QByteArray)), this, SLOT(updateRecvText(QByteArray)));
 
-    connect(deviceOperator, SIGNAL(test(QString)),    this, SLOT(test(QString)));
+    connect(helper->deviceOperator, SIGNAL(test(QString)),    this, SLOT(test(QString)));
 
 }
 
 /*************** btn SLOT************************/
 void    CollectionSetting::searchModNum()
 {
-    QSerialPort *serialPort = deviceOperator->port;
+    QSerialPort *serialPort = helper->deviceOperator->port;
     if(serialPort->isOpen()){
         logshow->append("串口已经打开!");
     }else{
@@ -193,25 +193,25 @@ void    CollectionSetting::searchModNum()
             return;
         }
     }
-    equArray.clear();
-    deviceOperator->searchDevices();
+    helper->equArray.clear();
+    helper->deviceOperator->searchDevices();
 }
 void    CollectionSetting::setModNum(){}
 void    CollectionSetting::setPassType()
 {
-    DataGatherConfiguration newCfg = equArray[modNumBox->currentIndex()];
+    DataGatherConfiguration newCfg = helper->equArray[modNumBox->currentIndex()];
     newCfg.inputMode = 0;
     for(int i = 0; i < MainWindow::passSize; i++){
         if(radioArray[i]->getChecked()){
             newCfg.inputMode |=( 0x01U << i);
         }
     }
-    deviceOperator->setDeviceConfig(equArray[modNumBox->currentIndex()], newCfg);
+    helper->deviceOperator->setDeviceConfig(helper->equArray[modNumBox->currentIndex()], newCfg);
 }
 
 void    CollectionSetting::readEquPar(){}
 void    CollectionSetting::readPassData(){
-    deviceOperator->getDeviceADCRes(modNumBox->currentData().toInt());
+    helper->deviceOperator->getDeviceADCRes(modNumBox->currentData().toInt());
     qDebug() << "===================" << modNumBox->currentData().toInt() << endl;
 }
 void    CollectionSetting::readZigbeeData(){}
@@ -225,23 +225,23 @@ void    CollectionSetting::onGotDevInfo(bool isok,DataGatherConfiguration cfg)
     if(!isok){
         return;
     }
-    for(int i =0; i < equArray.size();i++){
-        if(cfg.devID == equArray[0].devID){
+    for(int i =0; i < helper->equArray.size();i++){
+        if(cfg.devID == helper->equArray[0].devID){
             return;
         }        
     }
     logshow->append(QString("get one dev:devID=%1").arg(cfg.devID));
-    equArray.append(cfg);
+    helper->equArray.append(cfg);
 }
 void    CollectionSetting::onSearchDeviceFinished()
 {
-    if(equArray.size() == 0){
+    if(helper->equArray.size() == 0){
         return;
     }
 
-    modNumBox->setMaxCount(equArray.size());
-    for(int i = 0; i < equArray.size(); i++){
-        modNumBox->addItem(QString("%1").arg(equArray[i].devID));
+    modNumBox->setMaxCount(helper->equArray.size());
+    for(int i = 0; i < helper->equArray.size(); i++){
+        modNumBox->addItem(QString("%1").arg(helper->equArray[i].devID));
     }
     updateCheckArray(modNumBox->currentText());
 }
@@ -278,23 +278,23 @@ void    CollectionSetting::test(QString str){
 ////////////////////////////////////////////////////////////////
 void CollectionSetting::updateCheckArray(QString str)
 {
-    qDebug() << "equArray.size = " << equArray.size() << endl;
+    qDebug() << "equArray.size = " << helper->equArray.size() << endl;
     qDebug() << "radioArray.size = " << radioArray.size() << endl;
     qDebug()<<"str=" << str << endl;
-    DataGatherConfiguration curCfg = equArray[str.toInt() -1];
+    DataGatherConfiguration curCfg = helper->equArray[str.toInt() -1];
     for(int i = 0; i < MainWindow::passSize; i++){
         radioArray[i]->setChecked( curCfg.inputMode & (0x01U << i));
         //logshow->append(curCfg.inputMode& (0x01U << i) ? "1":"0");    //打印checkArray
     }
-    connect(deviceOperator, SIGNAL(deviceADCResultGot(int,uint16_t*)), this, SLOT(updateADCLine(int, uint16_t *)));
-    deviceOperator->getDeviceADCRes(equArray[modNumBox->currentIndex()].devID);
+    connect(helper->deviceOperator, SIGNAL(deviceADCResultGot(int,uint16_t*)), this, SLOT(updateADCLine(int, uint16_t *)));
+    helper->deviceOperator->getDeviceADCRes(helper->equArray[modNumBox->currentIndex()].devID);
 }
 
 void CollectionSetting::updateADCLine(int devId, uint16_t *pRes)
 {
-    const uint16_t devInputMode = equArray[modNumBox->currentIndex()].inputMode;
-    const double ACK = equArray[modNumBox->currentIndex()].AcSensorSpan * sqrt(2.0) / (2047.0 * 16);
-    const double DCK = (equArray[modNumBox->currentIndex()].DcSensorSpan == 0 ? 20 : equArray[modNumBox->currentIndex()].DcSensorSpan) / (4095.0 * 16);
+    const uint16_t devInputMode = helper->equArray[modNumBox->currentIndex()].inputMode;
+    const double ACK = helper->equArray[modNumBox->currentIndex()].AcSensorSpan * sqrt(2.0) / (2047.0 * 16);
+    const double DCK = (helper->equArray[modNumBox->currentIndex()].DcSensorSpan == 0 ? 20 : helper->equArray[modNumBox->currentIndex()].DcSensorSpan) / (4095.0 * 16);
     int ch = 0;
     double adcRes;
 

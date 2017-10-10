@@ -8,67 +8,31 @@
 
 #include <QDebug>
 
-DeviceOperator  *deviceOperator = NULL;
-QVector<DataGatherConfiguration>   equArray;
-QMQTT::Client   *qmqttClient = NULL;
+Helper *helper  = NULL;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    initMqtt();
-    initSerial();
+    helper = new Helper();
+    connect(helper->deviceOperator, SIGNAL(deviceADCResultGot(int, uint16_t*)),
+            this, SLOT(recvADCResult(int, uint16_t *)));
+
+    flushWidgets(0);//get lasted grid
+    showWidget();//show grid widget
+
+    if(helper->checkSerial()){
+        timeId = startTimer(helper->TIME_OUT, Qt::VeryCoarseTimer);
+    }
+
+    Module module = helper->dasConfig->dasData.enterprise.Modules[0];
 
     setGeometry(0,0,800,480);
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
 }
 
-void MainWindow::initMqtt()
-{
-    qmqttClient = new QMQTT::Client();
-}
-
-void MainWindow::initSerial()
-{
-    TIME_OUT    = 5000;
-
-    QSerialPort *serialPort = new QSerialPort();
-    serialPort->setPortName("ttyUSB0");
-    serialPort->setBaudRate(QSerialPort::Baud9600);
-    serialPort->setParity(QSerialPort::EvenParity);
-    serialPort->setDataBits(QSerialPort::Data8);
-    serialPort->setStopBits(QSerialPort::OneStop);
-    serialPort->setFlowControl(QSerialPort::NoFlowControl);
-    deviceOperator = new DeviceOperator(serialPort);
-    serialPort->open(QIODevice::ReadWrite);
-    connect(deviceOperator, SIGNAL(deviceADCResultGot(int, uint16_t*)), this, SLOT(recvADCResult(int, uint16_t *)));
-
-    flushWidgets(0);//get lasted grid
-    showWidget();//show grid widget
-
-    if(checkSerial()){
-        timeId = startTimer(TIME_OUT, Qt::VeryCoarseTimer);
-    }
-}
-bool MainWindow::checkSerial()
-{
-    QString str;
-    if(deviceOperator == NULL || deviceOperator->port == NULL || !deviceOperator->port->isOpen()){
-        str = "1/please set serialPort and click search device!";
-        log->append(str);
-        return false;
-    }
-    if(equArray.size() == 0){
-        log->append(str);
-        str.append("2/not found any device,please set serialPort and search device!");
-        return false;
-    }
-    modeSize = equArray.size();
-    return true;
-}
-
 void MainWindow::timerEvent(QTimerEvent *event)
 {
-    if(!checkSerial()){
+    if(!helper->checkSerial()){
         killTimer(timeId);
         return;
     }
@@ -106,8 +70,8 @@ void MainWindow::flushWidgets(int mode)
             gridWidget[i] =  gauge;
         }
     }else{
-        log->append(QString("equArray.size() = %1").arg(equArray.size()));
-        deviceOperator->getDeviceADCRes(equArray[mode].devID);
+        log->append(QString("equArray.size() = %1").arg(helper->equArray.size()));
+        helper->deviceOperator->getDeviceADCRes(helper->equArray[mode].devID);
     }
 }
 
@@ -159,7 +123,7 @@ void MainWindow::showWidget()
 
 void MainWindow::startSet()
 {
-    if(deviceOperator != NULL && deviceOperator->port->isOpen()){
+    if(helper->deviceOperator != NULL && helper->deviceOperator->port->isOpen()){
         killTimer(timeId);
     }
 
@@ -169,8 +133,8 @@ void MainWindow::startSet()
     setting->exec();
 
     log->clear();
-    if(checkSerial()){
-        timeId = startTimer(TIME_OUT, Qt::VeryCoarseTimer);
+    if(helper->checkSerial()){
+        timeId = startTimer(helper->TIME_OUT, Qt::VeryCoarseTimer);
     }
 
     delete setting;

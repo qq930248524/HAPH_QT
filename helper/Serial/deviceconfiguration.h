@@ -37,4 +37,5 @@ struct DataGatherConfiguration {
     uint8_t  productName[MB_REG_NAME_LENGTH];
 };
 
+
 #endif // DEVICECONFIGURATION_H

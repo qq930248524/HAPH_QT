@@ -8,18 +8,10 @@
 #include <QWidget>
 #include <QTextEdit>
 #include <QPushButton>
-#include <QSerialPort>
 
+#include "helper/helper.h"
 
-#include "helper/Serial/deviceconfiguration.h"
-#include "helper/Serial/deviceoperator.h"
-
-#include "helper/Mqtt/qmqtt.h"
-
-
-extern QVector<DataGatherConfiguration>   equArray;
-extern DeviceOperator  *deviceOperator;
-extern QMQTT::Client    *qmqttClient;
+extern Helper *helper;
 
 class MainWindow : public QMainWindow
 {
@@ -52,7 +44,6 @@ private:
     void flushWidgets(int mode);
     void showWidget();
     int     timeId;
-    int     TIME_OUT;
 
 public slots:
     void startSet();

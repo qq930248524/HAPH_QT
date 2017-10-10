@@ -45,7 +45,9 @@ HEADERS += mainwindow.h \
            helper/SwitchButton/switchbutton.h \
            setting/tableWidget/collectionsetting.h \
            setting/tableWidget/systemsetting.h \
-           setting/tableWidget/zigbeesetting.h
+           setting/tableWidget/zigbeesetting.h \
+    helper/helper.h \
+    helper/JsonConfig/dasConfig.h
 SOURCES += main.cpp \
            mainwindow.cpp \
            timewidget.cpp \
@@ -71,5 +73,7 @@ SOURCES += main.cpp \
            helper/SwitchButton/switchbutton.cpp \
            setting/tableWidget/collectionsetting.cpp \
            setting/tableWidget/systemsetting.cpp \
-           setting/tableWidget/zigbeesetting.cpp
+           setting/tableWidget/zigbeesetting.cpp \
+    helper/helper.cpp \
+    helper/JsonConfig/dasConfig.cpp
 RESOURCES += pic.qrc
