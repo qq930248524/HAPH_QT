@@ -15,7 +15,7 @@
 #include    <QComboBox>
 
 #include <QtSerialPort/QSerialPort>
-#include "helper/deviceoperator.h"
+#include "helper/Serial/deviceoperator.h"
 #include "helper/SwitchButton/switchbutton.h"
 
 class CollectionSetting : public QWidget

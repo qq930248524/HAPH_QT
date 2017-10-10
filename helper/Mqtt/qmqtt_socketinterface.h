@@ -1,8 +1,7 @@
 /*
- * qmqtt_router.h - qmqtt router
+ * qmqtt_socketinterface.h - qmqtt socket interface header
  *
  * Copyright (c) 2013  Ery Lee <ery.lee at gmail dot com>
- * Router added by Niklas Wulf <nwulf at geenen-it-systeme dot de>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,42 +29,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef QMQTT_ROUTESUBSCRIPTION_H
-#define QMQTT_ROUTESUBSCRIPTION_H
+#ifndef QMQTT_SOCKET_INTERFACE_H
+#define QMQTT_SOCKET_INTERFACE_H
 
-#include <helper/mqtt/qmqtt_global.h>
+#include <helper/Mqtt/qmqtt_global.h>
 
-#include <QObject>
-#include <QRegularExpression>
+#include <QHostAddress>
+#include <QIODevice>
 
-namespace QMQTT {
+namespace QMQTT
+{
 
-class Message;
-class RoutedMessage;
-class Router;
-
-class Q_MQTT_EXPORT RouteSubscription : public QObject
+class Q_MQTT_EXPORT SocketInterface : public QObject
 {
     Q_OBJECT
 public:
-    QString route() const;
+    explicit SocketInterface(QObject* parent = NULL) : QObject(parent) {}
+    virtual	~SocketInterface() {}
+
+    virtual QIODevice *ioDevice() = 0;
+    virtual void connectToHost(const QHostAddress& address, quint16 port) = 0;
+    virtual void connectToHost(const QString& hostName, quint16 port) = 0;
+    virtual void disconnectFromHost() = 0;
+    virtual QAbstractSocket::SocketState state() const = 0;
+    virtual QAbstractSocket::SocketError error() const = 0;
 
 signals:
-    void received(const RoutedMessage &message);
-
-private slots:
-    void routeMessage(const Message &message);
-
-private:
-    friend class Router;
-    explicit RouteSubscription(Router *parent = 0);
-    void setRoute(const QString &route);
-
-    QString _topic;
-    QRegularExpression _regularExpression;
-    QStringList _parameterNames;
+    void connected();
+    void disconnected();
+    void error(QAbstractSocket::SocketError socketError);
 };
 
-} // namespace QMQTT
+}
 
-#endif // QMQTT_ROUTESUBSCRIPTION_H
+#endif // QMQTT_SOCKET_INTERFACE_H

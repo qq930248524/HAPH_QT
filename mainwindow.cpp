@@ -10,9 +10,24 @@
 
 DeviceOperator  *deviceOperator = NULL;
 QVector<DataGatherConfiguration>   equArray;
+QMQTT::Client   *qmqttClient = NULL;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
+{
+    initMqtt();
+    initSerial();
+
+    setGeometry(0,0,800,480);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
+}
+
+void MainWindow::initMqtt()
+{
+    qmqttClient = new QMQTT::Client();
+}
+
+void MainWindow::initSerial()
 {
     TIME_OUT    = 5000;
 
@@ -33,11 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
     if(checkSerial()){
         timeId = startTimer(TIME_OUT, Qt::VeryCoarseTimer);
     }
-
-    setGeometry(0,0,800,480);
-    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
 }
-
 bool MainWindow::checkSerial()
 {
     QString str;
@@ -168,5 +179,4 @@ void MainWindow::startSet()
 
 MainWindow::~MainWindow()
 {
-
 }

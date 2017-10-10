@@ -1,5 +1,5 @@
 /*
- * qmqtt_timerinterface.h - qmqtt timer interface header
+ * qmqtt_message.h - qmqtt message header
  *
  * Copyright (c) 2013  Ery Lee <ery.lee at gmail dot com>
  * All rights reserved.
@@ -29,34 +29,66 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef QMQTT_TIMER_INTERFACE_H
-#define QMQTT_TIMER_INTERFACE_H
+#ifndef QMQTT_MESSAGE_H
+#define QMQTT_MESSAGE_H
 
-#include <helper/mqtt/qmqtt_global.h>
+#include <helper/Mqtt/qmqtt_global.h>
 
-#include <QObject>
+#include <QtCore/qmetatype.h>
+#include <QtCore/qshareddata.h>
 
 namespace QMQTT {
 
-class Q_MQTT_EXPORT TimerInterface : public QObject
+class MessagePrivate;
+
+class Q_MQTT_EXPORT Message
 {
-    Q_OBJECT
 public:
-    explicit TimerInterface(QObject* parent = NULL) : QObject(parent) {}
-    virtual ~TimerInterface() {}
+    Message();
+    explicit Message(const quint16 id, const QString &topic, const QByteArray &payload,
+                     const quint8 qos = 0, const bool retain = false, const bool dup = false);
+    Message(const Message &other);
+    ~Message();
 
-    virtual bool isSingleShot() const = 0;
-    virtual void setSingleShot(bool singleShot) = 0;
-    virtual int interval() const = 0;
-    virtual void setInterval(int msec) = 0;
-    virtual void start() = 0;
-    virtual void stop() = 0;
+    Message &operator=(const Message &other);
+#ifdef Q_COMPILER_RVALUE_REFS
+    inline Message &operator=(Message &&other) Q_DECL_NOTHROW
+    { swap(other); return *this; }
+#endif
 
-signals:
-    void timeout();
+    bool operator==(const Message &other) const;
+    inline bool operator!=(const Message &other) const
+    { return !operator==(other); }
+
+    inline void swap(Message &other) Q_DECL_NOTHROW
+    { qSwap(d, other.d); }
+
+    quint16 id() const;
+    void setId(const quint16 id);
+
+    quint8 qos() const;
+    void setQos(const quint8 qos);
+
+    bool retain() const;
+    void setRetain(const bool retain);
+
+    bool dup() const;
+    void setDup(const bool dup);
+
+    QString topic() const;
+    void setTopic(const QString &topic);
+
+    QByteArray payload() const;
+    void setPayload(const QByteArray &payload);
+
+private:
+    QSharedDataPointer<MessagePrivate> d;
 };
 
-}
+} // namespace QMQTT
 
-#endif // QMQTT_TIMER_INTERFACE_H
+Q_DECLARE_SHARED(QMQTT::Message)
 
+Q_DECLARE_METATYPE(QMQTT::Message)
+
+#endif // QMQTT_MESSAGE_H

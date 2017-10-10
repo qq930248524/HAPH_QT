@@ -11,13 +11,15 @@
 #include <QSerialPort>
 
 
-#include "helper/deviceconfiguration.h"
-#include "helper/deviceoperator.h"
+#include "helper/Serial/deviceconfiguration.h"
+#include "helper/Serial/deviceoperator.h"
 
+#include "helper/Mqtt/qmqtt.h"
 
 
 extern QVector<DataGatherConfiguration>   equArray;
 extern DeviceOperator  *deviceOperator;
+extern QMQTT::Client    *qmqttClient;
 
 class MainWindow : public QMainWindow
 {
@@ -26,6 +28,9 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+    void initMqtt();
+    void initSerial();
 
     const int ROW = 4;
     const int COL = 3;

@@ -30,30 +30,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef QMQTT_ROUTER_H
-#define QMQTT_ROUTER_H
+#ifndef QMQTT_ROUTESUBSCRIPTION_H
+#define QMQTT_ROUTESUBSCRIPTION_H
 
-#include <helper/mqtt/qmqtt_global.h>
+#include <helper/Mqtt/qmqtt_global.h>
 
 #include <QObject>
+#include <QRegularExpression>
 
 namespace QMQTT {
 
-class Client;
-class RouteSubscription;
+class Message;
+class RoutedMessage;
+class Router;
 
-class Q_MQTT_EXPORT Router : public QObject
+class Q_MQTT_EXPORT RouteSubscription : public QObject
 {
     Q_OBJECT
 public:
-    explicit Router(Client *parent = 0);
+    QString route() const;
 
-    RouteSubscription *subscribe(const QString &route);
+signals:
+    void received(const RoutedMessage &message);
+
+private slots:
+    void routeMessage(const Message &message);
 
 private:
-    Client *_client;
+    friend class Router;
+    explicit RouteSubscription(Router *parent = 0);
+    void setRoute(const QString &route);
+
+    QString _topic;
+    QRegularExpression _regularExpression;
+    QStringList _parameterNames;
 };
 
 } // namespace QMQTT
 
-#endif // QMQTT_ROUTER_H
+#endif // QMQTT_ROUTESUBSCRIPTION_H

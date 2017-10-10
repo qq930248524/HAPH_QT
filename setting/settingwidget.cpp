@@ -1,6 +1,6 @@
 #include "settingwidget.h"
 #include "DMSNavigation.h"
-
+#include <QTextEdit>
 SettingWidget::SettingWidget(QWidget *parent) : QWidget(parent)
 {
     DMSNavigation navi;

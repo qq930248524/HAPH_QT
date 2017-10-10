@@ -1,5 +1,5 @@
 /*
- * qmqtt_socketinterface.h - qmqtt socket interface header
+ * qmqtt_timerinterface.h - qmqtt timer interface header
  *
  * Copyright (c) 2013  Ery Lee <ery.lee at gmail dot com>
  * All rights reserved.
@@ -29,37 +29,34 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef QMQTT_SOCKET_INTERFACE_H
-#define QMQTT_SOCKET_INTERFACE_H
+#ifndef QMQTT_TIMER_INTERFACE_H
+#define QMQTT_TIMER_INTERFACE_H
 
-#include <helper/mqtt/qmqtt_global.h>
+#include <helper/Mqtt/qmqtt_global.h>
 
-#include <QHostAddress>
-#include <QIODevice>
+#include <QObject>
 
-namespace QMQTT
-{
+namespace QMQTT {
 
-class Q_MQTT_EXPORT SocketInterface : public QObject
+class Q_MQTT_EXPORT TimerInterface : public QObject
 {
     Q_OBJECT
 public:
-    explicit SocketInterface(QObject* parent = NULL) : QObject(parent) {}
-    virtual	~SocketInterface() {}
+    explicit TimerInterface(QObject* parent = NULL) : QObject(parent) {}
+    virtual ~TimerInterface() {}
 
-    virtual QIODevice *ioDevice() = 0;
-    virtual void connectToHost(const QHostAddress& address, quint16 port) = 0;
-    virtual void connectToHost(const QString& hostName, quint16 port) = 0;
-    virtual void disconnectFromHost() = 0;
-    virtual QAbstractSocket::SocketState state() const = 0;
-    virtual QAbstractSocket::SocketError error() const = 0;
+    virtual bool isSingleShot() const = 0;
+    virtual void setSingleShot(bool singleShot) = 0;
+    virtual int interval() const = 0;
+    virtual void setInterval(int msec) = 0;
+    virtual void start() = 0;
+    virtual void stop() = 0;
 
 signals:
-    void connected();
-    void disconnected();
-    void error(QAbstractSocket::SocketError socketError);
+    void timeout();
 };
 
 }
 
-#endif // QMQTT_SOCKET_INTERFACE_H
+#endif // QMQTT_TIMER_INTERFACE_H
+
