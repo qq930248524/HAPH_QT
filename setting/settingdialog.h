@@ -3,7 +3,10 @@
 
 #include <QWidget>
 #include <QDialog>
+
+#include "tableWidget/systemsetting.h"
 #include "tableWidget/collectionsetting.h"
+#include "tableWidget/zigbeesetting.h"
 
 class SettingDialog : public QDialog
 {

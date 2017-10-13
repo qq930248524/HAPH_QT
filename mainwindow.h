@@ -8,10 +8,12 @@
 #include <QWidget>
 #include <QTextEdit>
 #include <QPushButton>
+#include <setting/settingdialog.h>
 
 #include "helper/helper.h"
 
 extern Helper *helper;
+
 
 class MainWindow : public QMainWindow
 {
@@ -26,7 +28,7 @@ public:
 
     const int ROW = 4;
     const int COL = 3;
-    static const int passSize = 12;
+
     int modeSize = 0;
     int mode = 0;
 
@@ -36,6 +38,7 @@ public:
     QPushButton *setting;
     QLabel *timing;
 
+    SettingDialog *settingDialog;
 protected:
     void timerEvent(QTimerEvent *event);
 

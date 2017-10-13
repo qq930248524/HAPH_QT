@@ -1,6 +1,6 @@
 #ifndef COLLECTIONSETTING_H
 #define COLLECTIONSETTING_H
-#include "mainwindow.h"
+
 
 #include <QWidget>
 #include    <QHBoxLayout>
@@ -17,6 +17,9 @@
 #include <QtSerialPort/QSerialPort>
 #include "helper/Serial/deviceoperator.h"
 #include "helper/SwitchButton/switchbutton.h"
+
+#include "helper/helper.h"
+extern Helper *helper;
 
 class CollectionSetting : public QWidget
 {

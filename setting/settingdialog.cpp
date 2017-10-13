@@ -1,8 +1,6 @@
 #include "settingdialog.h"
 #include "DMSNavigation.h"
-#include "tableWidget/systemsetting.h"
-#include "tableWidget/collectionsetting.h"
-#include "tableWidget/zigbeesetting.h"
+
 
 #include <QTextEdit>
 #include <QLabel>

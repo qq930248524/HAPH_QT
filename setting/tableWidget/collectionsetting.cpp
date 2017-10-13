@@ -1,5 +1,5 @@
 #include "collectionsetting.h"
-#include "mainwindow.h"
+//#include "mainwindow.h"
 
 #include <QDebug>
 #include <QSerialPortInfo>
@@ -22,8 +22,8 @@ void CollectionSetting::initCheckArrayUI()
 {
     QVBoxLayout *pVBoxLayout = new QVBoxLayout();
 
-    radioArray.resize(MainWindow::passSize);
-    lineArray.resize(MainWindow::passSize);
+    radioArray.resize(CHANNELSIZE);
+    lineArray.resize(CHANNELSIZE);
     for(int i = 0; i < radioArray.size(); i++){
         QLabel          *label      = new QLabel(QString("No.%1").arg(i+1));
         SwitchButton    *sbtn       = new SwitchButton(this);
@@ -201,7 +201,7 @@ void    CollectionSetting::setPassType()
 {
     DataGatherConfiguration newCfg = helper->equArray[modNumBox->currentIndex()];
     newCfg.inputMode = 0;
-    for(int i = 0; i < MainWindow::passSize; i++){
+    for(int i = 0; i < CHANNELSIZE; i++){
         if(radioArray[i]->getChecked()){
             newCfg.inputMode |=( 0x01U << i);
         }
@@ -282,7 +282,7 @@ void CollectionSetting::updateCheckArray(QString str)
     qDebug() << "radioArray.size = " << radioArray.size() << endl;
     qDebug()<<"str=" << str << endl;
     DataGatherConfiguration curCfg = helper->equArray[str.toInt() -1];
-    for(int i = 0; i < MainWindow::passSize; i++){
+    for(int i = 0; i < CHANNELSIZE; i++){
         radioArray[i]->setChecked( curCfg.inputMode & (0x01U << i));
         //logshow->append(curCfg.inputMode& (0x01U << i) ? "1":"0");    //打印checkArray
     }
@@ -298,7 +298,7 @@ void CollectionSetting::updateADCLine(int devId, uint16_t *pRes)
     int ch = 0;
     double adcRes;
 
-    for(int i = 0; i < MainWindow::passSize; i++){
+    for(int i = 0; i < CHANNELSIZE; i++){
         if(devInputMode & (0x01U << i))
             adcRes = DCK * pRes[i];
         else

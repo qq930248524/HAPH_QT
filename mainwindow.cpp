@@ -1,8 +1,8 @@
+
 #include "mainwindow.h"
-#include "setting/settingdialog.h"
 #include "timewidget.h"
 #include "helper/QGauge/qgauge.h"
-
+#include "setting/settingdialog.h"
 #include <QFrame>
 #include <QLayout>
 
@@ -13,7 +13,10 @@ Helper *helper  = NULL;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+
     helper = new Helper();
+    settingDialog = new SettingDialog();
+
     connect(helper->deviceOperator, SIGNAL(deviceADCResultGot(int, uint16_t*)),
             this, SLOT(recvADCResult(int, uint16_t *)));
 
@@ -23,8 +26,6 @@ MainWindow::MainWindow(QWidget *parent)
     if(helper->checkSerial()){
         timeId = startTimer(helper->TIME_OUT, Qt::VeryCoarseTimer);
     }
-
-    Module module = helper->dasConfig->dasData.enterprise.Modules[0];
 
     setGeometry(0,0,800,480);
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
@@ -45,7 +46,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
 void MainWindow::flushWidgets(int mode)
 {
     if(gridWidget.isEmpty()){
-        gridWidget.resize(passSize);
+        gridWidget.resize(CHANNELSIZE);
         for(int i = 0; i < gridWidget.size(); i++){
             //gridWidget[i] = new PassWidget(mode, i);
             QGauge *gauge = new QGauge();
@@ -103,6 +104,7 @@ void MainWindow::showWidget()
     QIcon icon(":/myPic/setting.png");
     setting->setIcon(icon);
     setting->setIconSize(QSize(80,80));
+    setting->setFocusPolicy(Qt::NoFocus);
     connect(setting, SIGNAL(clicked(bool)), this, SLOT(startSet()));
 
     QHBoxLayout *bottomLayout = new QHBoxLayout();
@@ -123,21 +125,21 @@ void MainWindow::showWidget()
 
 void MainWindow::startSet()
 {
+    qDebug() << "-------[test]  startSet";
     if(helper->deviceOperator != NULL && helper->deviceOperator->port->isOpen()){
         killTimer(timeId);
     }
 
-    SettingDialog *setting = new SettingDialog();
+
     this->hide();
-    setting->show();
-    setting->exec();
+    settingDialog->show();
+    settingDialog->exec();
 
     log->clear();
     if(helper->checkSerial()){
         timeId = startTimer(helper->TIME_OUT, Qt::VeryCoarseTimer);
     }
 
-    delete setting;
     this->show();
 }
 

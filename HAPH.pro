@@ -4,9 +4,9 @@
 
 QT += core gui serialport widgets network
 
-contains(QT_ARCH, armv7) {
-     LIBS += -L/opt/tslib/lib/ -lts
-}
+
+LIBS += -L/opt/tslib/lib/ -lts
+
 
 
 TEMPLATE = app

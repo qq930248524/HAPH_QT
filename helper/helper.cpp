@@ -12,6 +12,7 @@ Helper::Helper(QObject *parent) : QObject(parent)
 
 void Helper::initSerial()
 {
+    qDebug() << "[helper] into initSerial!";
     QSerialPort *serialPort = new QSerialPort();
     serialPort->setPortName("ttyUSB0");
     serialPort->setBaudRate(QSerialPort::Baud9600);
@@ -25,6 +26,7 @@ void Helper::initSerial()
 
 void Helper::initMqtt()
 {
+    qDebug() << "[helper] into initMqtt!";
     qmqttClient = new QMQTT::Client();
 }
 

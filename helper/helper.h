@@ -10,6 +10,8 @@
 #include "helper/Serial/deviceoperator.h"
 #include "helper/Serial/deviceconfiguration.h"
 
+#define CHANNELSIZE 12
+
 class Helper : public QObject
 {
     Q_OBJECT
