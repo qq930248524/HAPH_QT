@@ -18,16 +18,16 @@ class Helper : public QObject
 public:
     explicit Helper(QObject *parent = 0);
 
-    int TIME_OUT;
     DasConfig *dasConfig;
-    DeviceOperator  *deviceOperator;
+    DeviceOperator  *deviceOperator = NULL;
     QVector<DataGatherConfiguration>   equArray;
     QMQTT::Client   *qmqttClient;
     bool checkSerial();
+    bool checkMqtt();
 
 private:
-    void initMqtt();
-    void initSerial();
+    bool initMqtt();
+    bool initSerial();
 
 signals:
 

@@ -33,13 +33,15 @@ QGauge::QGauge(QWidget *parent)
    m_lcd->setStyleSheet(style);
    m_lcd->setSegmentStyle(QLCDNumber::Flat);
    m_autodigits=true;
+
    setMinValue(0);
    setMaxValue(100);
-   setDigitCount(5);
+   //setDigitCount(5);
    setValue(0);
    setLabel("Speed");
    setUnits("Km/h");
    setThreshold(80);
+
    setCircularBarEnabled(true);
    setCoverGlassEnabled(true);
    setEnabled(true);
@@ -207,6 +209,7 @@ void QGauge::setDigitCount(int n_digits)
 {
     if(n_digits>0)
     {
+        m_autodigits=false;
         if (m_lcd)
             m_lcd->setDigitCount(n_digits);
     }

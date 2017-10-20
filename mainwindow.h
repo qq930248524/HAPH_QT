@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QHostInfo>
 #include <QMainWindow>
 #include <QVBoxLayout>
 #include <QGridLayout>
@@ -23,17 +24,15 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    void initMqtt();
-    void initSerial();
-
     const int ROW = 4;
     const int COL = 3;
 
-    int modeSize = 0;
-    int mode = 0;
+    int modeNum = 0;
+    bool isFull = true;
 
     QGridLayout *gridLayout;
     QVector<QWidget *> gridWidget;
+    QFrame *bottomFrame;
     QTextEdit *log;
     QPushButton *setting;
     QLabel *timing;
@@ -43,14 +42,25 @@ protected:
     void timerEvent(QTimerEvent *event);
 
 private:
-    bool checkSerial();
-    void flushWidgets(int mode);
     void showWidget();
+
+    const QString onStr = QString("background-color:green; min-width:60px; min-height:40px;");
+    const QString ofStr = QString("background-color:gray; min-width:60px; min-height:40px;");
+    QPushButton *btn_internet;
+    QPushButton *btn_serial;
+    QPushButton *btn_mqtt;
+    QPushButton *btn_full;
     int     timeId;
 
 public slots:
     void startSet();
     void recvADCResult(int, uint16_t *);
+
+    void switchFullScreen();
+    void checkInternet();
+    void checkSerial();
+    void checkMqtt();
+    void onLookupHost(QHostInfo info);
 
 };
 

@@ -37,7 +37,7 @@ void outputMessage(QtMsgType type, const QMessageLogContext &context, const QStr
     QString context_info = QString("File:(%1) Line:(%2)").arg(QString(context.file)).arg(context.line);
     QString current_date_time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss ddd");
     QString current_date = QString("(%1)").arg(current_date_time);
-    QString message = QString("%1 %2 %3 %4").arg(text).arg(context_info).arg(msg).arg(current_date);
+    QString message = QString("%1 %2 %3 %4").arg(text).arg(msg).arg(context_info).arg(current_date);
 
     QFile file("log.txt");
     file.open(QIODevice::WriteOnly | QIODevice::Append);
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     //注册MessageHandler
     qInstallMessageHandler(outputMessage);
-//    qDebug("This is a debug message");
+    qDebug("[MAIN] =============== QT 开始运行 ====================");
 //    qWarning("This is a warning message");
 //    qCritical("This is a critical message");
     //qFatal("This is a fatal message");
@@ -69,7 +69,8 @@ int main(int argc, char *argv[])
     a.setFont(font);
 
 
-    MainWindow w;    
+    MainWindow w;
+    w.setFixedSize(800,480);
     w.show();
     return a.exec();
 }

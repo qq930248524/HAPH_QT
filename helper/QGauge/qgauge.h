@@ -16,7 +16,7 @@ class QColor;
 class QGauge : public QWidget
 {
 
- Q_OBJECT
+    Q_OBJECT
 
     Q_ENUMS(errorCode);
     Q_PROPERTY(double value READ value WRITE setValue);
@@ -95,14 +95,14 @@ public slots:
     void setBarSize(int barSize);
 
 protected:
-        void paintEvent(QPaintEvent *event);
-        void resizeEvent(QResizeEvent *event);
-        void changeEvent(QEvent * event);
+    void paintEvent(QPaintEvent *event);
+    void resizeEvent(QResizeEvent *event);
+    void changeEvent(QEvent * event);
 
 private:
 
     void thresholdManager();
-    int digits(int val);  
+    int digits(int val);
     void drawCrown(QPainter *painter);
     void drawBackground(QPainter *painter);
     void drawTicks(QPainter *painter);

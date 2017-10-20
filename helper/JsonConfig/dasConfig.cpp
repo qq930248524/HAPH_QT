@@ -4,7 +4,7 @@
 
 DasConfig::DasConfig(QObject *parent) : QObject(parent)
 {
-
+    dasData.comName = "";
 }
 
 
@@ -12,7 +12,7 @@ bool DasConfig::init(QString filepath)
 {
     QFile file(filepath);
     if(!file.exists()){
-        qDebug("dasconfig.json not exists!");
+        qWarning("dasconfig.json not exists!");
         return false;
     }
     file.open(QIODevice::ReadOnly | QIODevice::Text);
@@ -20,7 +20,7 @@ bool DasConfig::init(QString filepath)
     QString val = file.readAll();
     QJsonDocument doc = QJsonDocument::fromJson(val.toUtf8(), &jsonError);
     if(jsonError.error != QJsonParseError::NoError){
-        qDebug() << "detail json error!" << jsonError.errorString();
+        qWarning() << "detail json error!" << jsonError.errorString();
         return false;
     }
 
@@ -68,4 +68,17 @@ bool DasConfig::init(QString filepath)
         }
         dasData.enterprise.Modules[i] = mode;
     }
+}
+
+int DasConfig::getModeNumByDevid(int devid)
+{
+    if(dasData.comName.isEmpty()){
+        return -1;
+    }
+    for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
+        if(dasData.enterprise.Modules[i].Id == devid){
+            return i;
+        }
+    }
+    return -1;
 }

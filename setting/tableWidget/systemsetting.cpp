@@ -32,7 +32,7 @@ SystemSetting::SystemSetting(QWidget *parent) : QWidget(parent)
         layoutArray[i] = new QHBoxLayout();
         gridLayout->addLayout(layoutArray[i], i/2, i%2, Qt::AlignRight);
     }
-    gridLayout->setMargin(30);
+    gridLayout->setMargin(20);
     gridLayout->setHorizontalSpacing(70);
 
     QLabel *label0 = new QLabel("企业编号 :  ");

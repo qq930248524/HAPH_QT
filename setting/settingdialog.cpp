@@ -15,20 +15,27 @@ SettingDialog::SettingDialog(QWidget *par)
     :QDialog(par)
 {
 //////////////////////////////  title   //////////////////////////////////////
-    QLabel  *titleLabel = new QLabel("                          环保治理设施设备行为数据设置", this);
-    titleLabel->setStyleSheet("background-color:green");
+    QLabel  *titleLabel = new QLabel("     环保治理设施设备行为数据设置", this);
+    titleLabel->setStyleSheet("background-color:green;"
+                              "font: bold 30px;");
+    titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setFixedHeight(titleSize);
+
+
 
     homeButton = new QPushButton("Home", titleLabel);
     homeButton->setAttribute(Qt::WA_TranslucentBackground);
     homeButton->setFixedHeight(titleSize);
-    connect(homeButton, SIGNAL(clicked()), this, SLOT(close()));
+    homeButton->setFocusPolicy(Qt::NoFocus);
+    homeButton->setStyleSheet("font:  20px;");
+    connect(homeButton, SIGNAL(pressed()), this, SLOT(close()));
 
 /////////////////////////////////////   tableView   ///////////////////////////////////////
     DMSNavigation *navi= new DMSNavigation();
     navi->setHorizontalAlignment(navi->AlignLeft);
     navi->resize(800, 70);
     navi->show();
+    navi->setFixedHeight(420);
 
     navi->addTab(new SystemSetting(), "系统设置");
     tableCollection = new CollectionSetting();

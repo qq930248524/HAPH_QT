@@ -4,10 +4,7 @@
 
 QT += core gui serialport widgets network
 
-
 LIBS += -L/opt/tslib/lib/ -lts
-
-
 
 TEMPLATE = app
 TARGET = HAPH
@@ -47,7 +44,8 @@ HEADERS += mainwindow.h \
            setting/tableWidget/systemsetting.h \
            setting/tableWidget/zigbeesetting.h \
     helper/helper.h \
-    helper/JsonConfig/dasConfig.h
+    helper/JsonConfig/dasConfig.h \
+    numpad.h
 SOURCES += main.cpp \
            mainwindow.cpp \
            timewidget.cpp \
@@ -75,5 +73,9 @@ SOURCES += main.cpp \
            setting/tableWidget/systemsetting.cpp \
            setting/tableWidget/zigbeesetting.cpp \
     helper/helper.cpp \
-    helper/JsonConfig/dasConfig.cpp
+    helper/JsonConfig/dasConfig.cpp \
+    numpad.cpp
 RESOURCES += pic.qrc
+
+FORMS += \
+    numpad.ui

@@ -45,7 +45,7 @@ public:
     QString RetryCount;
     QString SamplingFrequency;
     bool    UseZigBee;
-    quint16 BaudRate;
+    quint32 BaudRate;
     QString ZigBeeId;
     Enterprise enterprise;
 };
@@ -57,8 +57,10 @@ class DasConfig : public QObject
 public:
     explicit DasConfig(QObject *parent = 0);
     bool init(QString filepath);
+    int getModeNumByDevid(int devid);
     QJsonParseError jsonError;
     DasData dasData;
+
 
 signals:
 

@@ -86,7 +86,7 @@ void CollectionSetting::initMidWidgetUI()
     logshow            =  new QTextEdit();
     //logshow->document ()->setMaximumBlockCount (5);
     logshow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    logshow->setFixedHeight(250);
+    logshow->setFixedHeight(240);
     logshow->setReadOnly(true);
 
     QVBoxLayout *vLayout = new QVBoxLayout();
@@ -110,11 +110,11 @@ void CollectionSetting::initButtonArrayUI()
     QPushButton *readPassData            = new QPushButton("读取通道数据");
     QPushButton *readZigbeeData            = new QPushButton("zigbee取数据");
 
-    connect(searchModNum, SIGNAL(clicked(bool)), this, SLOT(searchModNum()));
-    connect(setPassType, SIGNAL(clicked(bool)), this, SLOT(setPassType()));
-    connect(readEquPar, SIGNAL(clicked(bool)), this, SLOT(readEquPar()));
-    connect(readPassData, SIGNAL(clicked(bool)), this, SLOT(readPassData()));
-    connect(readZigbeeData, SIGNAL(clicked(bool)), this, SLOT(readZigbeeData()));
+    connect(searchModNum, SIGNAL(pressed()), this, SLOT(searchModNum()));
+    connect(setPassType, SIGNAL(pressed()), this, SLOT(setPassType()));
+    connect(readEquPar, SIGNAL(pressed()), this, SLOT(readEquPar()));
+    connect(readPassData, SIGNAL(pressed()), this, SLOT(readPassData()));
+    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(readZigbeeData()));
 
     QVBoxLayout *vLayout    = new QVBoxLayout();
     vLayout->addWidget(searchModNum, 3, Qt::AlignTop);

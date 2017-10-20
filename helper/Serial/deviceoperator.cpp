@@ -163,6 +163,7 @@ void DeviceOperator::getDeviceADCRes(int dev)
     }
     else
     {
+        emit deviceADCResultGot(dev, NULL);
         delete [] pRegs;
     }
 }
