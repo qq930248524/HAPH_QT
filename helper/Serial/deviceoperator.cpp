@@ -12,9 +12,10 @@ const int DeviceOperator::DeviceBaudrateList[N_DEV_BAUDRATE] = {
     300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200
 };
 
-DeviceOperator::DeviceOperator(QSerialPort* port, int maxID) :
+DeviceOperator::DeviceOperator(QSerialPort* port, bool useZigbee, int maxID) :
     port(port),
     stopped(true),
+    useZigbee(useZigbee),
     maxSearchID(maxID)
 {
 }
@@ -183,6 +184,9 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
     char msgBuffer[32] = {};
     int  msgLen = 0;
 
+    if(useZigbee){
+        msgBuffer[msgLen++] = 0x00;
+    }
     msgBuffer[msgLen++] = dev;
     msgBuffer[msgLen++] = MB_CODE_FUNC_READ_REG;
     msgBuffer[msgLen++] = HI_BYTE(startreg);
@@ -206,10 +210,13 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
         emit    sendMsg(QByteArray(msgBuffer, msgLen));
     }
     else
+    {
         return false;
+    }
+
 
     // 等待数据发送完成
-    if(port->waitForReadyRead(250))
+    if(port->waitForReadyRead(500))
     {
         uint8_t recvBuffer[256] = { 0 };
         int     recvLength = 0;
@@ -222,7 +229,7 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
         emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
 
         /* 响应数据已经接收完，开始消息处理 */
-        if(recvLength != nRegisters*2 + 5)
+        if(recvLength != nRegisters*2 + (useZigbee?6:5))
             return false;
 
         // 检查消息CRC是否正确
@@ -232,6 +239,10 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
         int msgOffset = 0;
 
         // 检查发送方ID
+        if(useZigbee){
+            msgOffset++;
+        }
+
         if(recvBuffer[msgOffset++] != dev)
             return false;
 
@@ -254,6 +265,7 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
     }
     else    // 没有收到设备的反馈
     {
+        qDebug("[serial] read data timeout!");
         return false;
     }
 }
@@ -269,6 +281,9 @@ bool DeviceOperator::writeDevRegister(int dev, uint16_t regAddr, uint16_t value)
     char msgBuffer[32];
     int  msgLen = 0;
 
+    if(useZigbee){
+        msgBuffer[msgLen++] = 0x00;
+    }
     msgBuffer[msgLen++] = dev;
     msgBuffer[msgLen++] = MB_CODE_FUNC_WRITE_REG;
     msgBuffer[msgLen++] = HI_BYTE(regAddr);

@@ -23,8 +23,9 @@ public:
     }
 
 public:
-    DeviceOperator(QSerialPort* port, int maxID = 10);
+    DeviceOperator(QSerialPort* port, bool useZigbee = true, int maxID = 10);
     QSerialPort* port;
+    bool useZigbee;
 
     void stop();
 

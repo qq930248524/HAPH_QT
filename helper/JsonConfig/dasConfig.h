@@ -30,6 +30,7 @@ class Enterprise{
 public:
     QString Id;
     QString DeviceId;
+    QString SerialNo;
     QString Name;
     QVector<Module> Modules;
 };
@@ -38,7 +39,7 @@ class DasData{
 public:
     QString comName;
     QString Server;
-    quint16 Port;
+    quint32 Port;
     QString Username;
     QString Password;
     QString QueryDelay;

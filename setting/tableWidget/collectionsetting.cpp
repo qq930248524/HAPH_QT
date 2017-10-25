@@ -166,7 +166,7 @@ void CollectionSetting::initDev()
     connect(helper->deviceOperator, SIGNAL(finishedDevCalibrate(bool)), this, SLOT(onCalibrateDeviceFinished(bool)));
     connect(helper->deviceOperator, SIGNAL(finishedDevConfigSet(bool)), this, SLOT(onSetDevConfigFinished(bool)));
 
-    connect(helper->deviceOperator,SIGNAL(sendMsg(QByteArray)), this, SLOT(updateSendText(QByteArray)));
+    connect(helper->deviceOperator, SIGNAL(sendMsg(QByteArray)), this, SLOT(updateSendText(QByteArray)));
     connect(helper->deviceOperator, SIGNAL(recvMsg(QByteArray)), this, SLOT(updateRecvText(QByteArray)));
 
     connect(helper->deviceOperator, SIGNAL(test(QString)),    this, SLOT(test(QString)));

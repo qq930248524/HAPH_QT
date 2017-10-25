@@ -38,7 +38,8 @@ bool DasConfig::init(QString filepath)
     dasData.ZigBeeId    = obj["ZigBeeId"].toString();
     QJsonObject enterObj = obj["Enterprise"].toObject();
     dasData.enterprise.Id = enterObj["Id"].toString();
-    dasData.enterprise.DeviceId = enterObj["QJsonObject"].toString();
+    dasData.enterprise.DeviceId = enterObj["DeviceId"].toString();
+    dasData.enterprise.SerialNo = enterObj["SerialNo"].toString();
     dasData.enterprise.Name = enterObj["Name"].toString();
 
     QJsonArray  modeArray   = enterObj["Modules"].toArray();

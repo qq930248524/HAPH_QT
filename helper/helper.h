@@ -5,7 +5,7 @@
 #include <QVector>
 #include <QSerialPort>
 
-#include "helper/Mqtt/qmqtt.h"
+#include "helper/Mqtt/mqttoperator.h"
 #include "helper/JsonConfig/dasConfig.h"
 #include "helper/Serial/deviceoperator.h"
 #include "helper/Serial/deviceconfiguration.h"
@@ -20,12 +20,13 @@ public:
 
     DasConfig *dasConfig;
     DeviceOperator  *deviceOperator = NULL;
+    MqttOperator    *mqttOperator   = NULL;
+
     QVector<DataGatherConfiguration>   equArray;
-    QMQTT::Client   *qmqttClient;
+
     bool checkSerial();
     bool checkMqtt();
 
-private:
     bool initMqtt();
     bool initSerial();
 

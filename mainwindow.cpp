@@ -4,6 +4,7 @@
 #include "helper/QGauge/qgauge.h"
 #include "setting/settingdialog.h"
 #include "numpad.h"
+#include <QDateTime>
 
 #include <QFrame>
 #include <QLayout>
@@ -17,6 +18,10 @@ MainWindow::MainWindow(QWidget *parent)
     helper = new Helper();
     connect(helper->deviceOperator, SIGNAL(deviceADCResultGot(int, uint16_t*)),
             this, SLOT(recvADCResult(int, uint16_t *)));
+    connect(helper->mqttOperator->client, SIGNAL(connected()),
+            this, SLOT(mqttConnectted()));
+    connect(helper->mqttOperator->client, SIGNAL(disconnected()),
+            this, SLOT(mqttDisConnectted()));
 
     showWidget();//show grid widget
     checkInternet();
@@ -63,6 +68,7 @@ void MainWindow::recvADCResult(int devId, uint16_t *pRef)
         oneGauge->setLabel(QString("%1-%2").arg(devId).arg(i+1));
         oneGauge->setUnits("");
         oneGauge->setValue(0);
+        oneGauge->setDigitCount(1);
         oneGauge->setMaxValue(100);
         oneGauge->setMinValue(0);
         oneGauge->setThreshold(90);
@@ -70,6 +76,7 @@ void MainWindow::recvADCResult(int devId, uint16_t *pRef)
 
     int modeNum = helper->dasConfig->getModeNumByDevid(devId);
     if(modeNum == -1 || pRef == NULL){
+        qDebug() << "[UI] mode" << modeNum << " ofLine.";
         goto Ext;
     }
 
@@ -88,9 +95,12 @@ void MainWindow::recvADCResult(int devId, uint16_t *pRef)
             oneGauge->setDigitCount(4);
 
             //数据采集器采样原始电流换算公式如下：
-            //  1、DC（0~20mA）：数据采集器采用通道上传数据为DC_Data，采样实际电流I实际=（DC_Data*20）/（4096*16）；
-            //  2、AC（0~20mA）：数据采集器采用通道上传数据为AC_Data，采样实际电流I实际=（AC_Data*20*sqrt(2.0)）/（2047*16）；
-            //  3、AC（0~100mA）：数据采集器采用通道上传数据为AC_Data，采样实际电流I实际=（AC_Data*100*sqrt(2.0)）/（2047*16）；
+            //  1、DC（0~20mA）：数据采集器采用通道上传数据为DC_Data，
+            //      采样实际电流I实际=（DC_Data*20）/（4096*16）；
+            //  2、AC（0~20mA）：数据采集器采用通道上传数据为AC_Data，
+            //      采样实际电流I实际=（AC_Data*20*sqrt(2.0)）/（2047*16）；
+            //  3、AC（0~100mA）：数据采集器采用通道上传数据为AC_Data，
+            //      采样实际电流I实际=（AC_Data*100*sqrt(2.0)）/（2047*16）；
             //  Iout实际=(Iin实际-Iinmin )*(Ioutmax-Ioutmin)/( Iinmax-Iinmin)+ Ioutmin
 
             double Iin;
@@ -104,9 +114,33 @@ void MainWindow::recvADCResult(int devId, uint16_t *pRef)
                     *(oneChannel.OutputValueMax-oneChannel.OutputValueMin)
                     /(oneChannel.InputValueMax-oneChannel.InputValueMin)
                     +oneChannel.OutputValueMin;
-            oneGauge->setValue(Iout);
+            if(isOriginal){
+                oneGauge->setValue(Iout);
+                oneGauge->setThreshold(oneChannel.OutputValueMax*0.9);
+            }else{
+                oneGauge->setValue(Iin);
+                oneGauge->setThreshold(oneChannel.InputValueMax*0.9);
+            }
+            qDebug() << "[UI] Iin = "<< Iin << " Iout = " << Iout;
         }
+
+        //MQTT sendData
+        //data format don't care after
+
+        DasData dasData = helper->dasConfig->dasData;
+        QString msg;
+        QString current_date_time = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
+        msg.append(current_date_time);
+        for(int i = 0; i < CHANNELSIZE; i++){
+            msg.append(QString(",%1-%2-%3:%4")
+                       .arg(dasData.enterprise.DeviceId, 3, 10)
+                       .arg(devId)
+                       .arg(i+1)
+                       .arg(pRef[i]));
+        }
+        helper->mqttOperator->sendData(msg);
     }
+
 Ext:
     if(pRef != NULL){
         delete pRef;
@@ -153,18 +187,23 @@ void MainWindow::showWidget()
     btn_internet   = new QPushButton("网络");
     btn_serial     = new QPushButton("串口");
     btn_mqtt       = new QPushButton("MQTT");
+    btn_data       = new QPushButton("原始数据");
     btn_full       = new QPushButton("全屏");
-    connect(btn_full,       SIGNAL(pressed()), this, SLOT(switchFullScreen()));
+
     connect(btn_internet,   SIGNAL(pressed()), this, SLOT(checkInternet()));
     connect(btn_serial,     SIGNAL(pressed()), this, SLOT(checkSerial()));
     connect(btn_mqtt,       SIGNAL(pressed()), this, SLOT(checkMqtt()));
-    btn_full->setStyleSheet(onStr);
-    btn_full->setFocusPolicy(Qt::NoFocus);
+    connect(btn_data,       SIGNAL(pressed()), this, SLOT(conversionData()));
+    connect(btn_full,       SIGNAL(pressed()), this, SLOT(switchFullScreen()));
+    btn_mqtt->setStyleSheet(ofStr);
+    btn_data->setStyleSheet(ofStr);
+    btn_full->setStyleSheet(ofStr);
 
     QVBoxLayout *rightLayout    = new QVBoxLayout();
     rightLayout->addWidget(btn_internet);
     rightLayout->addWidget(btn_serial);
     rightLayout->addWidget(btn_mqtt);
+    rightLayout->addWidget(btn_data);
     rightLayout->addWidget(btn_full);
     rightFrame->setLayout(rightLayout);
     rightFrame->setFrameStyle(QFrame::WinPanel|QFrame::Raised);
@@ -236,10 +275,12 @@ void MainWindow::switchFullScreen()
     if(isFull){
         bottomFrame->hide();
         gaugeSize = QSize(150,150);
+        btn_full->setStyleSheet(onStr);
         isFull = false;
     }else{
         bottomFrame->show();
         gaugeSize = QSize(120,120);
+        btn_full->setStyleSheet(ofStr);
         isFull = true;
     }
 
@@ -263,22 +304,50 @@ void MainWindow::onLookupHost(QHostInfo info)
     }
 }
 void MainWindow::checkSerial(){
-    if(helper->checkSerial()){
+    if(helper->checkSerial()){//on
         btn_serial->setStyleSheet(onStr);
-        log->append("[serial] open faild!");
-    }else{
-        btn_serial->setStyleSheet(ofStr);
         log->append("[serial] open success!");
+    }else{//off
+        if(helper->initSerial()){//open ok
+            btn_serial->setStyleSheet(onStr);
+            log->append("[serial] open success!");
+        }else{//open failed
+            btn_serial->setStyleSheet(ofStr);
+            log->append("[serial] open faild!");
+        }
     }
 }
+
 void MainWindow::checkMqtt(){
     if(helper->checkMqtt()){
-        btn_mqtt->setStyleSheet(onStr);
-        log->append("[MQTT] open success!");
+        log->append("[MQTT] is connectted! ");
     }else{
-        btn_mqtt->setStyleSheet(ofStr);
-        log->append("[MQTT] open faild!");
+        log->append("[MQTT] is closed and will reStart mqtt...");
+        helper->initMqtt();
     }
+}
+
+void MainWindow::mqttConnectted()
+{
+    log->append("[MQTT] has connectted. ");
+    btn_mqtt->setStyleSheet(onStr);
+    helper->mqttOperator->isOnline = true;
+}
+void MainWindow::mqttDisConnectted()
+{
+    log->append("[MQTT] has disConnectted. ");
+    btn_mqtt->setStyleSheet(ofStr);
+    helper->mqttOperator->isOnline = false;
+}
+
+void MainWindow::conversionData()
+{
+    if(isOriginal){
+        btn_data->setStyleSheet(ofStr);
+    }else{
+        btn_data->setStyleSheet(onStr);
+    }
+    isOriginal = !isOriginal;
 }
 
 MainWindow::~MainWindow()

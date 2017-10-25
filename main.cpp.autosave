@@ -56,7 +56,6 @@ void outputMessage(QtMsgType type, const QMessageLogContext &context, const QStr
 
 int main(int argc, char *argv[])
 {
-
     QApplication a(argc, argv);
 
     //设置日志

@@ -11,23 +11,36 @@ Helper::Helper(QObject *parent) : QObject(parent)
 }
 
 bool Helper::initSerial()
-{
-
+{    
     DasData dasData = dasConfig->dasData;
     if(dasData.comName.isEmpty()){
-        qDebug() << "[serial] comName is empty!";
+        qDebug("open serial failed. dasconfig.comName is empty!");
         return false;
     }
+    if(checkSerial()){
+        qDebug("serial is oppend!");
+        return true;
+    }
 
-    QSerialPort *serialPort = new QSerialPort();
+
+    QSerialPort *serialPort = NULL;
+    if(deviceOperator == NULL){
+        serialPort = new QSerialPort();
+    }else{
+        serialPort = deviceOperator->port;
+    }
+
     serialPort->setPortName(dasData.comName);
     serialPort->setBaudRate(dasData.BaudRate);
-
     serialPort->setParity(QSerialPort::EvenParity);
     serialPort->setDataBits(QSerialPort::Data8);
     serialPort->setStopBits(QSerialPort::OneStop);
     serialPort->setFlowControl(QSerialPort::NoFlowControl);
-    deviceOperator = new DeviceOperator(serialPort);
+
+    if(deviceOperator == NULL){
+        deviceOperator = new DeviceOperator(serialPort, dasData.UseZigBee);
+    }
+
     if(!serialPort->open(QIODevice::ReadWrite)){
         qDebug() << QString("[serial] open serial faild!");
         qDebug() << "   ==>comName: "    << dasData.comName;
@@ -39,7 +52,7 @@ bool Helper::initSerial()
     }else{
         qDebug() << "[serial] open serial success!";
         if(deviceOperator == NULL){
-            deviceOperator = new DeviceOperator(serialPort);
+            deviceOperator = new DeviceOperator(serialPort, dasData.UseZigBee);
         }
         return true;
     }
@@ -47,19 +60,65 @@ bool Helper::initSerial()
 
 bool Helper::initMqtt()
 {
-    qDebug() << "[helper] into initMqtt!";
-    qmqttClient = new QMQTT::Client();
-    return false;
+    DasData dasData = dasConfig->dasData;
+
+    if(dasData.comName.isEmpty()){//can't be open
+        qDebug() << "[MQTT] dasConfig.comName is Empty! ";
+        return false;
+    }
+    if(checkMqtt()){//had been open
+        qDebug() << "[MQTT] mqtt is connectted. so don't reopen!";
+        return true;
+    }
+
+    QMQTT::Client *client = NULL;
+    if(mqttOperator == NULL){
+        client = new QMQTT::Client();
+    }else{
+        client = mqttOperator->client;
+    }
+
+//        client->setHostName("haph.mqtt.iot.gz.baidubce.com");
+    QHostAddress hostAdd("114.242.17.65");
+    client->setHost(hostAdd);
+    client->setPort(dasData.Port);
+    client->setUsername(dasData.Username);
+    client->setPassword(dasData.Password.toUtf8());
+    //        client->setUsername("haph/dev1");
+    //        client->setPassword(QString("/NNfooo+0EMPM6M/JINujITl9ADlQKlwvGg8p7ZLSg8=").toUtf8());
+    client->setKeepAlive(10);
+    client->setCleanSession(true);
+    client->setClientId(dasData.enterprise.DeviceId);
+    client->connectToHost();
+    qDebug() << "[MQTT] run connectToHost();" ;
+
+    if(mqttOperator == NULL){
+        mqttOperator = new MqttOperator(this, client, &dasConfig->dasData);
+    }
+
+    if(client->isConnectedToHost()){
+        return true;
+    }else{
+        return false;
+    }
 }
 
 bool Helper::checkSerial()
 {
-    if(deviceOperator == NULL || deviceOperator->port == NULL || !deviceOperator->port->isOpen()){
+    if(deviceOperator == NULL
+            || deviceOperator->port == NULL
+            || !deviceOperator->port->isOpen()){
         return false;
     }
     return true;
 }
+
 bool Helper::checkMqtt()
 {
-    return false;
+    if(mqttOperator == NULL
+            || mqttOperator->client == NULL
+            || mqttOperator->client->isConnectedToHost()==false)
+        return false;
+    else
+        return true;
 }

@@ -29,6 +29,7 @@ public:
 
     int modeNum = 0;
     bool isFull = true;
+    bool isOriginal = false;
 
     QGridLayout *gridLayout;
     QVector<QWidget *> gridWidget;
@@ -49,6 +50,7 @@ private:
     QPushButton *btn_internet;
     QPushButton *btn_serial;
     QPushButton *btn_mqtt;
+    QPushButton *btn_data;
     QPushButton *btn_full;
     int     timeId;
 
@@ -60,8 +62,12 @@ public slots:
     void checkInternet();
     void checkSerial();
     void checkMqtt();
+    void conversionData();
+
     void onLookupHost(QHostInfo info);
 
+    void mqttConnectted();
+    void mqttDisConnectted();
 };
 
 #endif // MAINWINDOW_H
