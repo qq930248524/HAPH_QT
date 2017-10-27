@@ -1,8 +1,11 @@
 /*******************************************
  * https://github.com/emqtt/qmqtt-client
  * *********************************************/
+
+
 #ifndef MQTTOPERATOR_H
 #define MQTTOPERATOR_H
+
 #include "qmqtt.h"
 #include "helper/JsonConfig/dasConfig.h"
 
@@ -19,14 +22,14 @@ public:
 
     QMQTT::Client *client = NULL;
     DasData *dasData;
-
-    void sendData(QString );
-
 signals:
 
 public slots:
     void mqttConnectted();
     void mqttDisConnectted();
+    bool sendData(QString );
+    bool dcac(bool isDC);
+    bool door(bool isOpen);
 };
 
 #endif // MQTTOPERATOR_H

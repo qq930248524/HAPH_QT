@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "helper/watchdog/watchdog.h"
+#include "helper/Gpio/GPIOSet.h"
 #include <QApplication>
 #include <QFontDatabase>
 
@@ -54,9 +55,9 @@ void outputMessage(QtMsgType type, const QMessageLogContext &context, const QStr
     mutex.unlock();
 }
 
+
 int main(int argc, char *argv[])
 {
-
     QApplication a(argc, argv);
 
     //设置日志
@@ -66,6 +67,10 @@ int main(int argc, char *argv[])
     qDebug("[MAIN] =============== QT 开始运行 ====================");
     qDebug("======================================================");
 
+    //设置看门狗
+    WatchDog watchDog;
+    watchDog.startWatchDog();
+
     //设置字体
     int id = QFontDatabase::addApplicationFont("/lib/fonts/DroidSansFallback.ttf");
     QString msyh = QFontDatabase::applicationFontFamilies (id).at(0);
@@ -73,12 +78,10 @@ int main(int argc, char *argv[])
     font.setPointSize(10);
     a.setFont(font);
 
-    //设置看门狗
-    WatchDog watchDog;
-    watchDog.startWatchDog();
-
+    //设置MainWindow
     MainWindow w;
     w.setFixedSize(800,480);
     w.show();
+
     return a.exec();
 }

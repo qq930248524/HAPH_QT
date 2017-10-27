@@ -138,7 +138,10 @@ void MainWindow::recvADCResult(int devId, uint16_t *pRef)
                        .arg(i+1)
                        .arg(pRef[i]));
         }
-        helper->mqttOperator->sendData(msg);
+        if(helper->mqttOperator->sendData(msg) == false){
+            checkInternet();
+            checkMqtt();
+        }
     }
 
 Ext:
@@ -292,6 +295,7 @@ void MainWindow::switchFullScreen()
 void MainWindow::checkInternet(){
     QHostInfo::lookupHost("www.baidu.com",this, SLOT(onLookupHost(QHostInfo)));
 }
+
 void MainWindow::onLookupHost(QHostInfo info)
 {
     if (info.error() != QHostInfo::NoError) {

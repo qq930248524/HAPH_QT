@@ -7,7 +7,7 @@ QT += core gui serialport widgets network
 target.path = /home/HAPH/
 INSTALLS += target
 
-LIBS += -L/opt/tslib/lib/ -lts
+ LIBS += -L/opt/tslib/lib/ -lts
 
 TEMPLATE = app
 TARGET = HAPH
@@ -50,7 +50,10 @@ HEADERS += mainwindow.h \
     helper/JsonConfig/dasConfig.h \
     numpad.h \
     helper/Mqtt/mqttoperator.h \
-    helper/watchdog/watchdog.h
+    helper/watchdog/watchdog.h \
+    helper/Gpio/GPIOSet.h \
+    helper/Gpio/gpioset.h \
+    helper/Gpio/GPIOSet.h
 SOURCES += main.cpp \
            mainwindow.cpp \
            timewidget.cpp \
@@ -81,7 +84,8 @@ SOURCES += main.cpp \
     helper/JsonConfig/dasConfig.cpp \
     numpad.cpp \
     helper/Mqtt/mqttoperator.cpp \
-    helper/watchdog/watchdog.cpp
+    helper/watchdog/watchdog.cpp \
+    helper/Gpio/GPIOSet.cpp
 RESOURCES += pic.qrc
 
 FORMS += \

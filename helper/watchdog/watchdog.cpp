@@ -1,7 +1,5 @@
 #include "watchdog.h"
 #include <qdebug.h>
-//放狗
-
 
 WatchDog::WatchDog(QObject *parent) : QObject(parent)
 {}
@@ -24,7 +22,7 @@ void WatchDog::startWatchDog()
         struct watchdog_info wi;
         ioctl(fd, WDIOC_GETSUPPORT, &wi);
         ioctl(fd, WDIOC_SETTIMEOUT, &timeout);
-        qDebug() << LABEL + "set timeout: " + timeout;
+        qDebug() << LABEL + "set timeout: " << timeout;
         int i=WDIOS_ENABLECARD;
         ioctl(fd,WDIOC_SETOPTIONS,&i);
         qDebug() << LABEL + "The dog was let out! ";

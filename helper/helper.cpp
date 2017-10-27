@@ -8,6 +8,19 @@ Helper::Helper(QObject *parent) : QObject(parent)
     }
     initSerial();
     initMqtt();
+    initGPIO();
+}
+
+bool Helper::initGPIO()
+{
+    //设置GPIO
+//    GPIOset gpioSet(mqttOperator);
+//    gpioSet.start();
+    GPIOset *gpioSet = new GPIOset();
+    gpioSet->start();
+    connect(gpioSet, SIGNAL(door(bool)), mqttOperator, SLOT());
+    connect(gpioSet, SIGNAL(dcac(bool)), mqttOperator, SLOT());
+    return true;
 }
 
 bool Helper::initSerial()

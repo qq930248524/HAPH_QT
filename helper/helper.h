@@ -6,9 +6,10 @@
 #include <QSerialPort>
 
 #include "helper/Mqtt/mqttoperator.h"
+#include "helper/Gpio/GPIOSet.h"
 #include "helper/JsonConfig/dasConfig.h"
 #include "helper/Serial/deviceoperator.h"
-#include "helper/Serial/deviceconfiguration.h"
+
 
 #define CHANNELSIZE 12
 
@@ -29,6 +30,7 @@ public:
 
     bool initMqtt();
     bool initSerial();
+    bool initGPIO();
 
 signals:
 
