@@ -23,6 +23,7 @@ public:
     DeviceOperator  *deviceOperator = NULL;
     MqttOperator    *mqttOperator   = NULL;
 
+    DeviceOperator  *setting_deviceOperator = NULL;
     QVector<DataGatherConfiguration>   equArray;
 
     bool checkSerial();

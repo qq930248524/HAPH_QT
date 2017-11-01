@@ -55,6 +55,32 @@ bool MqttOperator::dcac(bool isDC)//need modify
     int qos = 1;
     QString notifyTopic;
     if(isDC){
+        notifyTopic = QString("haph/cep/notify/poweron/%1/%2")
+                .arg(dasData->enterprise.Id)
+                .arg(dasData->enterprise.SerialNo);
+    }else{
+        notifyTopic = QString("haph/cep/notify/poweroff/%1/%2")
+                .arg(dasData->enterprise.Id)
+                .arg(dasData->enterprise.SerialNo);
+    }
+
+    QString time = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
+    QMQTT::Message msg(0, notifyTopic, time.toLatin1(), qos);
+    client->publish(msg);
+    qDebug() << "[MQTT] [sendNotify]: " << notifyTopic;
+    return true;
+}
+
+bool MqttOperator::door(bool isOpen)
+{
+    if(client->isConnectedToHost() == false){
+        qDebug() << "[MQTT] [sendNotify] false. door is" << isOpen;
+        return false;
+    }
+
+    int qos = 1;
+    QString notifyTopic;
+    if(isOpen){
         notifyTopic = QString("haph/cep/notify/lidopened/%1/%2")
                 .arg(dasData->enterprise.Id)
                 .arg(dasData->enterprise.SerialNo);
@@ -71,26 +97,25 @@ bool MqttOperator::dcac(bool isDC)//need modify
     return true;
 }
 
-bool MqttOperator::door(bool isOpen){
-    qDebug("101010101010101010101010101010010101010101001");
+bool MqttOperator::sensor(bool isOn, QString num)
+{
     if(client->isConnectedToHost() == false){
-        qDebug() << "[MQTT] [sendNotify] false. door is" << isOpen;
+        qDebug() << "[MQTT] [sendNotify] false. sensor "+ num +" is" << isOn;
         return false;
     }
-    qDebug("101010101010101010101010101010010101010101001");
+
     int qos = 1;
     QString notifyTopic;
-    if(isOpen){
-        notifyTopic = QString("haph/cep/notify/lidopened/%1/%2")
+    if(isOn){
+        notifyTopic = QString("haph/cep/notify/online/%1/%2")
                 .arg(dasData->enterprise.Id)
                 .arg(dasData->enterprise.SerialNo);
     }else{
-        notifyTopic = QString("haph/cep/notify/lidclosed/%1/%2")
+        notifyTopic = QString("haph/cep/notify/offline/%1/%2")
                 .arg(dasData->enterprise.Id)
                 .arg(dasData->enterprise.SerialNo);
     }
 
-    qDebug("101010101010101010101010101010010101010101001");
     QString time = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
     QMQTT::Message msg(0, notifyTopic, time.toLatin1(), qos);
     client->publish(msg);

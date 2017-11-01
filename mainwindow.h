@@ -64,8 +64,6 @@ public slots:
     void checkMqtt();
     void conversionData();
 
-    void onLookupHost(QHostInfo info);
-
     void mqttConnectted();
     void mqttDisConnectted();
 };

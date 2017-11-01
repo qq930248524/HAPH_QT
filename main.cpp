@@ -46,7 +46,7 @@ void outputMessage(QtMsgType type, const QMessageLogContext &context, const QStr
     QString message = QString("%1 %2 %3 %4").arg(text).arg(msg).arg(context_info).arg(current_date);
 
     QFile file("log.txt");
-    file.open(QIODevice::WriteOnly | QIODevice::Append);
+    file.open(QIODevice::ReadWrite | QIODevice::Append);
     QTextStream text_stream(&file);
     text_stream << message << "\r\n";
     file.flush();
@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
     qDebug("======================================================");
 
     //设置看门狗
-    WatchDog watchDog;
-    watchDog.startWatchDog();
+//    WatchDog watchDog;
+//    watchDog.startWatchDog();
 
     //设置字体
     int id = QFontDatabase::addApplicationFont("/lib/fonts/DroidSansFallback.ttf");

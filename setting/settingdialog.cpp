@@ -21,8 +21,6 @@ SettingDialog::SettingDialog(QWidget *par)
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setFixedHeight(titleSize);
 
-
-
     homeButton = new QPushButton("Home", titleLabel);
     homeButton->setAttribute(Qt::WA_TranslucentBackground);
     homeButton->setFixedHeight(titleSize);
@@ -54,3 +52,5 @@ SettingDialog::SettingDialog(QWidget *par)
     this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
 }
 
+SettingDialog:: ~SettingDialog()
+{}

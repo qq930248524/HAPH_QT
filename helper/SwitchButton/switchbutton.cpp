@@ -240,8 +240,9 @@ void SwitchButton::setChecked(bool checked)
     if (this->checked != checked) {
         this->checked = checked;
         emit checkedChanged(checked);
-        update();
     }
+    resizeEvent(NULL);
+    update();
 }
 
 void SwitchButton::setButtonStyle(SwitchButton::ButtonStyle buttonStyle)

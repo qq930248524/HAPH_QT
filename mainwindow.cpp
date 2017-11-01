@@ -53,8 +53,27 @@ void MainWindow::timerEvent(QTimerEvent *event)
         return;
     }
 
-    QVector<Module> modeArr = helper->dasConfig->dasData.enterprise.Modules;
-    helper->deviceOperator->getDeviceADCRes(modeArr[modeNum++].Id);
+    DasData dasData = helper->dasConfig->dasData;
+    QVector<Module> modeArr = dasData.enterprise.Modules;
+
+    //zigbee
+    int hostId = 0;
+    int slaveId = 0;
+
+    //modbus
+    if(dasData.UseZigBee){
+        QString host = dasData.enterprise.Modules[modeNum++].ZigBeeId;
+        QString slave = dasData.enterprise.Modules[modeNum++].ZigBeeId;
+        hostId |= host.mid(2,2).toInt()<<8;
+        hostId |= host.mid(4,2).toInt();
+        slaveId |= slave.mid(2,2).toInt()<<8;
+        slaveId |= slave.mid(4,2).toInt();
+    }else{
+        hostId = 0;
+        slaveId = dasData.enterprise.Modules[modeNum++].Id;
+    }
+
+    helper->deviceOperator->getDeviceADCRes(hostId, slaveId);
     if(modeNum == modeArr.size()){
         modeNum = 0;
     }
@@ -65,7 +84,9 @@ void MainWindow::recvADCResult(int devId, uint16_t *pRef)
     log->append(QString("======= recvADCResult %1 ======").arg(devId));
     for(int i = 0; i< CHANNELSIZE; i++){
         QGauge *oneGauge = (QGauge *)gridWidget[i];
-        oneGauge->setLabel(QString("%1-%2").arg(devId).arg(i+1));
+        oneGauge->setLabel(QString("%1-%2").
+                           arg(helper->dasConfig->getModeNumByDevid(devId)).
+                           arg(i+1));
         oneGauge->setUnits("");
         oneGauge->setValue(0);
         oneGauge->setDigitCount(1);
@@ -161,7 +182,6 @@ void MainWindow::showWidget()
         gauge->setSizePolicy(sizePolicy);
         gauge->setMinimumSize(120, 120);
 
-
         gauge->setLabel(QString("%1-%2").arg(modeNum+1).arg(i+1));
         gauge->setUnits("");
 
@@ -253,14 +273,11 @@ void MainWindow::showWidget()
     QWidget *mainwidget = new QWidget();
     mainwidget->setLayout(mainLayout);
     this->setCentralWidget(mainwidget);
-
-    QLabel *test = new QLabel();
-    test->setEnabled(true);
-
 }
 
 void MainWindow::startSet()
 {
+    helper->deviceOperator->port->close();
     NumPad numPad(this);
     if(numPad.exec() == QDialog::Accepted){
         settingDialog = new SettingDialog();
@@ -270,6 +287,7 @@ void MainWindow::startSet()
         this->show();
         delete settingDialog;
     }
+    helper->initSerial();
 }
 
 void MainWindow::switchFullScreen()
@@ -293,20 +311,19 @@ void MainWindow::switchFullScreen()
 }
 
 void MainWindow::checkInternet(){
-    QHostInfo::lookupHost("www.baidu.com",this, SLOT(onLookupHost(QHostInfo)));
+//    QString cmd("ping -c 3 -i 0.5 www.baidu.com");
+//    if(!system(cmd.toLatin1().data())){
+//        btn_internet->setStyleSheet(onStr);
+//        log->append("[internet] online!");
+//        qDebug() << "[internet] online";
+//    }else{
+//        btn_internet->setStyleSheet(ofStr);
+//        log->append("[internet] offline!");
+//        qDebug() << "[internet] offline";
+//    }
+    btn_internet->setStyleSheet(ofStr);
 }
 
-void MainWindow::onLookupHost(QHostInfo info)
-{
-    if (info.error() != QHostInfo::NoError) {
-        //网络未连接，发送信号通知
-        btn_internet->setStyleSheet(ofStr);
-        log->append("[internet] offline!");
-    }else{
-        btn_internet->setStyleSheet(onStr);
-        log->append("[internet] online!");
-    }
-}
 void MainWindow::checkSerial(){
     if(helper->checkSerial()){//on
         btn_serial->setStyleSheet(onStr);

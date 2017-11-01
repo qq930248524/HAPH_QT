@@ -1,17 +1,36 @@
 #ifndef ZIGBEESETTING_H
 #define ZIGBEESETTING_H
 
-#include <QWidget>
+#include <QFrame>
 
-class ZigbeeSetting : public QWidget
+#include "helper/helper.h"
+extern Helper *helper;
+
+
+namespace Ui {
+class ZigbeeSetting;
+}
+
+class ZigbeeSetting : public QFrame
 {
     Q_OBJECT
+
 public:
     explicit ZigbeeSetting(QWidget *parent = 0);
+    ~ZigbeeSetting();
+    void updatePar();
 
-signals:
+protected slots:
+    /*slot btn*/
+    void getPar();
+    void setPar();
+    /*slot deviceOperator*/
+    void    onSetDevConfigFinished(bool isOK);
+    void    updateSendText(QByteArray msg);
+    void    updateRecvText(QByteArray msg);
 
-public slots:
+private:
+    Ui::ZigbeeSetting *ui;
 };
 
 #endif // ZIGBEESETTING_H

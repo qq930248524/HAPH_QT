@@ -15,13 +15,6 @@ public:
     static const int N_DEV_BAUDRATE = 11;
     static const int DeviceBaudrateList[N_DEV_BAUDRATE];
 
-    static bool devIsLegal(int devID)
-    {
-        if(devID >= MB_MIN_DEVICE_ADDR && devID <= MB_MAX_DEVICE_ADDR)
-            return true;
-        return false;
-    }
-
 public:
     DeviceOperator(QSerialPort* port, bool useZigbee = true, int maxID = 10);
     QSerialPort* port;
@@ -37,7 +30,7 @@ public slots:
     void getDeviceInfo(int dev);
     void setDeviceConfig(DataGatherConfiguration, DataGatherConfiguration);
     void calibrateDevice(int dev);
-    void getDeviceADCRes(int dev);
+    void getDeviceADCRes(int, int );
 
 signals:
     void deviceInformationGot(bool fSuccess, DataGatherConfiguration);
@@ -54,7 +47,9 @@ protected:
     void run();
 
 private:
-    bool readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg, uint16_t nAddress);
+    bool setNetAddress(uint16_t);
+    bool readDevRegister(uint16_t* pRegs, int hostId, int slaveId
+                         , uint16_t startreg, uint16_t nAddress);
     bool writeDevRegister(int dev, uint16_t address, uint16_t value);
     bool parseDeviceConfig(DataGatherConfiguration&, uint16_t*, int);
 
@@ -63,7 +58,7 @@ private:
 
     bool stopped;
 
-    int maxSearchID;
+    int maxSearchID = 10;
 };
 
 #endif // DEVICEOPERATOR_H

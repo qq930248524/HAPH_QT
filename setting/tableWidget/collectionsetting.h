@@ -33,18 +33,20 @@ public:
     QVector<SwitchButton *>    radioArray;
     QVector<QLineEdit *>            lineArray;
 
+    QComboBox   *portNumBox;
     QComboBox   *modNumBox;
     QComboBox   *checkDigitBox;
     QComboBox   *baudRateBox;
-    QTextEdit       *logshow;
+    QTextEdit   *logshow;
 
 signals:
 
 public slots:
+    void    test();
+    void    showPortInfo(QString);
     void    searchModNum();
     void    setModNum();
     void    setPassType();
-    void    readEquPar();
     void    readPassData();
     void    readZigbeeData();
 
@@ -53,19 +55,15 @@ public slots:
     void    onSetDevConfigFinished(bool);
 
     void    updateSendText(QByteArray msg);
-    void    updateRecvText(QByteArray   msg);
-    void    updateCheckArray(QString);
+    void    updateRecvText(QByteArray msg);
+    void    updateCheckArray(int);
     void    updateADCLine(int devId, uint16_t *data);
-    void    test(QString);
 
 private :
     void    initDev();
     void    initCheckArrayUI();
     void    initMidWidgetUI();
     void    initButtonArrayUI();
-
-//    extern QSerialPort *serialPort;
-//    extern DeviceOperator *deviceOperator;
 };
 
 #endif // COLLECTIONSETTING_H

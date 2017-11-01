@@ -1,5 +1,4 @@
 #include "collectionsetting.h"
-//#include "mainwindow.h"
 
 #include <QDebug>
 #include <QSerialPortInfo>
@@ -13,9 +12,6 @@ CollectionSetting::CollectionSetting(QWidget *parent) : QWidget(parent)
     setLayout(mainLayout);
 
     initDev();//初始化串/devOperator
-    if(helper->deviceOperator != NULL && helper->deviceOperator->port->isOpen()){
-        onSearchDeviceFinished();
-    }
 }
 
 void CollectionSetting::initCheckArrayUI()
@@ -32,12 +28,11 @@ void CollectionSetting::initCheckArrayUI()
         label->setFixedWidth(40);
         sbtn->setButtonStyle(SwitchButton::ButtonStyle::ButtonStyle_Rect);
         sbtn->setText("交流", "直流");
+        sbtn->setTextColor(QColor("black"), QColor("black"));
         sbtn->setFixedWidth(60);
-
         lineEdit->setReadOnly(true);
         lineEdit->setAlignment(Qt::AlignLeft);
         lineEdit->setFixedWidth(80);
-
 
         radioArray[i]   =     sbtn;
         lineArray[i]    =     lineEdit;
@@ -57,23 +52,40 @@ void CollectionSetting::initCheckArrayUI()
 
 void CollectionSetting::initMidWidgetUI()
 {
-    modNumBox   = new QComboBox();
+    //set QComboBox
+    portNumBox      = new QComboBox();
+    modNumBox       = new QComboBox();
     checkDigitBox   = new QComboBox();
-    baudRateBox    = new QComboBox();
+    baudRateBox     = new QComboBox();
+
+    portNumBox->setFixedWidth(160);
     modNumBox->setFixedWidth(160);
     checkDigitBox->setFixedWidth(160);
     baudRateBox->setFixedWidth(160);
+
+    portNumBox->setMaxVisibleItems(5);
     modNumBox->setMaxVisibleItems(5) ;
     checkDigitBox->setMaxVisibleItems(2) ;
     baudRateBox->setMaxVisibleItems(10) ;
-    checkDigitBox->addItems(QStringList()<<"偶校验"<<"奇校验");
-    baudRateBox->addItems(QStringList()<<"300"<<"600"<<"1200"<<"4800"<<"9600"<<"19200"<<"38400"<<"56000"<<"115200");
-    baudRateBox->setCurrentIndex(4);
 
+    QStringList comNum;
+    foreach(const QSerialPortInfo &onePort, QSerialPortInfo::availablePorts()){
+        comNum.append(onePort.portName());
+    }
+    portNumBox->addItems(comNum);
+    modNumBox->addItems(QStringList()<<"1"<<"2"<<"3"<<"4"<<"5"<<"6"<<"7"<<"8");
+    checkDigitBox->addItems(QStringList()<<"NO"<<"Odd"<<"Even");
+    for(int i = 0; i < DeviceOperator::N_DEV_BAUDRATE; i++){
+        baudRateBox->addItem(QString("%1").arg(DeviceOperator::DeviceBaudrateList[i]));
+    }
+    //baudRateBox->addItems(QStringList()<<"300"<<"600"<<"1200"<<"4800"<<"9600"<<"19200"<<"38400"<<"56000"<<"115200");
+    baudRateBox->setCurrentIndex(8);
+
+    //////////////////////////////////////////////////////////////////////////
     QHBoxLayout *hLayout1 = new QHBoxLayout();
-    hLayout1->addWidget(new QLabel("模块编号:"), 1, Qt::AlignRight);
-    hLayout1->addWidget(modNumBox);
-    connect(modNumBox, SIGNAL(activated(QString)), this, SLOT(updateCheckArray(QString)));
+    hLayout1->addWidget(new QLabel("串口名称:"), 1, Qt::AlignRight);
+    hLayout1->addWidget(portNumBox);
+    connect(portNumBox, SIGNAL(activated(QString)), this, SLOT(showPortInfo(QString)));
 
     QHBoxLayout *hLayout2 = new QHBoxLayout();
     hLayout2->addWidget(new QLabel("校验位:"), 1, Qt::AlignRight);
@@ -83,16 +95,22 @@ void CollectionSetting::initMidWidgetUI()
     hLayout3->addWidget(new QLabel("波特率:"), 1, Qt::AlignRight);
     hLayout3->addWidget(baudRateBox);
 
+    QHBoxLayout *hLayout4 = new QHBoxLayout();
+    hLayout4->addWidget(new QLabel("模块编号:"), 1, Qt::AlignRight);
+    hLayout4->addWidget(modNumBox);
+//    connect(modNumBox, SIGNAL(activated(QString)), this, SLOT(updateCheckArray(QString)));
+
     logshow            =  new QTextEdit();
     //logshow->document ()->setMaximumBlockCount (5);
     logshow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    logshow->setFixedHeight(240);
+    logshow->setFixedSize(310, 220);
     logshow->setReadOnly(true);
 
     QVBoxLayout *vLayout = new QVBoxLayout();
     vLayout->addLayout(hLayout1);
     vLayout->addLayout(hLayout2);
     vLayout->addLayout(hLayout3);
+    vLayout->addLayout(hLayout4);
     vLayout->addStretch(1);
     vLayout->addWidget(new QLabel("结果:"));
     vLayout->addWidget(logshow);
@@ -104,54 +122,29 @@ void CollectionSetting::initMidWidgetUI()
 void CollectionSetting::initButtonArrayUI()
 {
     QPushButton *searchModNum   = new QPushButton("搜索模块编号");
-    QPushButton *setModNum          = new QPushButton("设置模块编号");
-    QPushButton *setPassType           = new QPushButton("设置通道类型");
-    QPushButton *readEquPar           = new QPushButton("读取设备参数");
-    QPushButton *readPassData            = new QPushButton("读取通道数据");
-    QPushButton *readZigbeeData            = new QPushButton("zigbee取数据");
+    QPushButton *setModNum      = new QPushButton("设置模块编号");
+    QPushButton *setPassType    = new QPushButton("设置通道类型");
+    QPushButton *readPassData   = new QPushButton("读取通道数据");
+    QPushButton *readZigbeeData = new QPushButton("zigbee取数据");
 
-    connect(searchModNum, SIGNAL(pressed()), this, SLOT(searchModNum()));
-    connect(setPassType, SIGNAL(pressed()), this, SLOT(setPassType()));
-    connect(readEquPar, SIGNAL(pressed()), this, SLOT(readEquPar()));
-    connect(readPassData, SIGNAL(pressed()), this, SLOT(readPassData()));
-    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(readZigbeeData()));
+    connect(searchModNum,   SIGNAL(pressed()), this, SLOT(searchModNum()));
+    connect(setModNum,      SIGNAL(pressed()), this, SLOT(setModNum()));
+    connect(setPassType,    SIGNAL(pressed()), this, SLOT(setPassType()));
+    connect(readPassData,   SIGNAL(pressed()), this, SLOT(readPassData()));
+//    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(readZigbeeData()));
+//    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(test()));
 
     QVBoxLayout *vLayout    = new QVBoxLayout();
     vLayout->addWidget(searchModNum, 3, Qt::AlignTop);
     vLayout->addWidget(setModNum, 3, Qt::AlignTop);
     vLayout->addWidget(setPassType, 3, Qt::AlignTop);
     vLayout->addStretch(3);
-    vLayout->addWidget(readEquPar, 3, Qt::AlignTop);
     vLayout->addWidget(readPassData, 3, Qt::AlignTop);
     vLayout->addWidget(readZigbeeData, 3, Qt::AlignTop);
 
-//    setStyleSheet("QPushButton {"
-//                  "Background:rgb(110, 190, 10);"
-//                  "color:white;"
-//                  "font:bold;"
-//                  "font-size:30px;"
-//                  "font-weight:90px;"
-//                  "border-width:90px;"
-//                  "border-radius:5px;}");
-    setStyleSheet("QPushButton {"
-                  "border: 1px solid #000000;border-radius: 5px;"
-                  "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
-                  "stop: 0 #dedede, "
-                  "stop: 0.5 #434343,"
-                  "stop: 0.51 #000000, "
-                  "stop: 1 #656a6d);"
-                  "color: #FFFFFF;"
-                  "font: bold 20px;"
-                  "min-width: 90px;"
-                  "min-height: 50px}"
-
-                  "QPushButton:pressed {"
-                  "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
-                  "stop: 0 #cfcccc, stop: 0.5 #333232,"
-                  "stop: 0.51 #000000, stop: 1 #585c5f);"
-                  "color: #00CC00;}"
-                  "QPushButton:flat {"
-                  "border: none;}");
+        setStyleSheet("QPushButton {"
+                      "Background:rgb(18, 165, 53);"
+                      "font-size:30px;}");
 
     QFrame *frame = new QFrame();
     frame->setLayout(vLayout);
@@ -160,101 +153,199 @@ void CollectionSetting::initButtonArrayUI()
     mainLayout->addWidget(frame);
 }
 void CollectionSetting::initDev()
-{
-    connect(helper->deviceOperator, SIGNAL(deviceInformationGot(bool,DataGatherConfiguration)), this, SLOT(onGotDevInfo(bool,DataGatherConfiguration)));
-    connect(helper->deviceOperator, SIGNAL(finishedDevSearching()), this, SLOT(onSearchDeviceFinished()));
-    connect(helper->deviceOperator, SIGNAL(finishedDevCalibrate(bool)), this, SLOT(onCalibrateDeviceFinished(bool)));
-    connect(helper->deviceOperator, SIGNAL(finishedDevConfigSet(bool)), this, SLOT(onSetDevConfigFinished(bool)));
+{    
+    DeviceOperator * deviceOperator = new DeviceOperator(NULL);
+    deviceOperator->useZigbee = false;
 
-    connect(helper->deviceOperator, SIGNAL(sendMsg(QByteArray)), this, SLOT(updateSendText(QByteArray)));
-    connect(helper->deviceOperator, SIGNAL(recvMsg(QByteArray)), this, SLOT(updateRecvText(QByteArray)));
+    connect(deviceOperator, SIGNAL(deviceInformationGot(bool,DataGatherConfiguration)),
+            this, SLOT(onGotDevInfo(bool,DataGatherConfiguration)));
+    connect(deviceOperator, SIGNAL(finishedDevSearching()),
+            this, SLOT(onSearchDeviceFinished()));
+    connect(deviceOperator, SIGNAL(finishedDevCalibrate(bool)),
+            this, SLOT(onCalibrateDeviceFinished(bool)));
+    connect(deviceOperator, SIGNAL(finishedDevConfigSet(bool)),
+            this, SLOT(onSetDevConfigFinished(bool)));
+    connect(deviceOperator, SIGNAL(sendMsg(QByteArray)),
+            this, SLOT(updateSendText(QByteArray)));
+    connect(deviceOperator, SIGNAL(recvMsg(QByteArray)),
+            this, SLOT(updateRecvText(QByteArray)));
+    connect(deviceOperator, SIGNAL(deviceADCResultGot(int,uint16_t*)),
+            this, SLOT(updateADCLine(int, uint16_t *)));
 
-    connect(helper->deviceOperator, SIGNAL(test(QString)),    this, SLOT(test(QString)));
-
+    helper->setting_deviceOperator = deviceOperator;
 }
 
 /*************** btn SLOT************************/
 void    CollectionSetting::searchModNum()
 {
-    QSerialPort *serialPort = helper->deviceOperator->port;
-    if(serialPort->isOpen()){
-        logshow->append("串口已经打开!");
-    }else{
-        serialPort->setBaudRate(baudRateBox->currentText().toInt());
-        serialPort->setParity(checkDigitBox->currentIndex() == 0?QSerialPort::EvenParity:QSerialPort::OddParity);
-        if(serialPort->open(QIODevice::ReadWrite)){
-            logshow->append(QString("打开串口<%1>成功! ").arg(serialPort->portName()));
-        }else{
-            logshow->append(QString("打开串口<%1>失败! party:%2 baud:%3")
-                            .arg(serialPort->portName())
-                            .arg(serialPort->EvenParity)
-                            .arg(serialPort->baudRate())
-                            );
-            return;
-        }
+    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+
+    QSerialPort *serialPort = deviceOperator->port;
+    if(serialPort == NULL){
+        serialPort = new QSerialPort();
+        deviceOperator->port = serialPort;
     }
+
+    if(serialPort->isOpen()){
+        serialPort->close();
+    }
+
+    serialPort->setPortName(portNumBox->currentText());
+    serialPort->setBaudRate(DeviceOperator::DeviceBaudrateList[baudRateBox->currentIndex()]);
+    switch(checkDigitBox->currentIndex())
+    {
+    case MB_EVEN_PARITY:
+        serialPort->setParity(QSerialPort::EvenParity);
+        break;
+    case MB_ODD_PARITY:
+        serialPort->setParity(QSerialPort::OddParity);
+        break;
+    default:
+        serialPort->setParity(QSerialPort::NoParity);
+        break;
+    }
+
+
+    if(serialPort->open(QIODevice::ReadWrite)){
+        logshow->append(QString("打开串口<%1>成功! ").arg(serialPort->portName()));
+    }else{
+        logshow->append(QString("打开串口<%1>失败! party:%2 baud:%3")
+                        .arg(serialPort->portName())
+                        .arg(serialPort->EvenParity)
+                        .arg(serialPort->baudRate())
+                        );
+        return;
+    }
+
     helper->equArray.clear();
-    helper->deviceOperator->searchDevices();
+    deviceOperator->searchDevices();
 }
-void    CollectionSetting::setModNum(){}
+
+void    CollectionSetting::setModNum()
+{
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
+    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+
+    DataGatherConfiguration newCfg = equArray[0];
+    newCfg.devID = modNumBox->currentText().toInt();
+    newCfg.modbusBaudrate = baudRateBox->currentIndex();
+    newCfg.parity = static_cast<ModbusParityMode> (checkDigitBox->currentIndex());
+
+    deviceOperator->setDeviceConfig(equArray[0], newCfg);
+}
+
 void    CollectionSetting::setPassType()
 {
-    DataGatherConfiguration newCfg = helper->equArray[modNumBox->currentIndex()];
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
+    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+
+    DataGatherConfiguration newCfg = equArray[0];
     newCfg.inputMode = 0;
     for(int i = 0; i < CHANNELSIZE; i++){
         if(radioArray[i]->getChecked()){
             newCfg.inputMode |=( 0x01U << i);
         }
     }
-    helper->deviceOperator->setDeviceConfig(helper->equArray[modNumBox->currentIndex()], newCfg);
+
+    deviceOperator->setDeviceConfig(equArray[0], newCfg);
 }
 
-void    CollectionSetting::readEquPar(){}
-void    CollectionSetting::readPassData(){
-    helper->deviceOperator->getDeviceADCRes(modNumBox->currentData().toInt());
+void    CollectionSetting::readPassData()
+{
+    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+    deviceOperator->getDeviceADCRes(0, helper->equArray[0].devID);
     qDebug() << "===================" << modNumBox->currentData().toInt() << endl;
 }
+
 void    CollectionSetting::readZigbeeData(){}
-
-
 
 
 /*********** devOperator SLOT ******************/
 void    CollectionSetting::onGotDevInfo(bool isok,DataGatherConfiguration cfg)
 {
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
+
     if(!isok){
         return;
     }
-    for(int i =0; i < helper->equArray.size();i++){
-        if(cfg.devID == helper->equArray[0].devID){
+    for(int i =0; i < equArray.size();i++){
+        if(cfg.devID == equArray[i].devID){
+            equArray[i] = cfg;
+            logshow->append(QString("update dev config success! devId = %1")
+                            .arg(cfg.devID));
             return;
-        }        
+        }
     }
     logshow->append(QString("get one dev:devID=%1").arg(cfg.devID));
-    helper->equArray.append(cfg);
+    equArray.append(cfg);
 }
+
 void    CollectionSetting::onSearchDeviceFinished()
 {
-    if(helper->equArray.size() == 0){
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
+    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+
+    if(equArray.size() == 0){
+        logshow->append("没有搜索到任何设备");
         return;
     }
+    logshow->clear();
 
-    modNumBox->setMaxCount(helper->equArray.size());
-    for(int i = 0; i < helper->equArray.size(); i++){
-        modNumBox->addItem(QString("%1").arg(helper->equArray[i].devID));
+    DataGatherConfiguration cfg = equArray[0];
+
+    logshow->append(QString("搜索到%1 个设备,默认选中第一个设备!").arg(equArray.size()));
+    logshow->append("[硬件版本]" + QString("V%1.%2").arg(cfg.hardwareVersion>>8).arg(cfg.hardwareVersion&0xFFU));
+    logshow->append("[软件版本]" + QString(QString("V%1.%2.%3").arg(cfg.firmwareVersion>>8).arg((cfg.firmwareVersion&0xF0U)>>4).arg(cfg.firmwareVersion&0x0FU)));
+    QString str;
+    for(size_t i = 0; i < sizeof(cfg.serialID); ++i)
+    {
+        str += QString("%1").arg(static_cast<int>(cfg.serialID[i]), 2, 16, QLatin1Char('0'));
     }
-    updateCheckArray(modNumBox->currentText());
+    logshow->append("[设备序列号]" + str);
+    str = QString("%1%2%3%4").arg(QString(cfg.productName[0])).arg(QString(cfg.productName[1]))
+                             .arg(QString(cfg.productName[2])).arg(QString(cfg.productName[3]));
+    logshow->append("[设备类型]" + str);
+
+    modNumBox->setCurrentIndex(cfg.devID - 1);
+    switch(cfg.parity)
+    {
+    case MB_NO_PARITY:
+        checkDigitBox->setCurrentText("无校验");
+        break;
+    case MB_ODD_PARITY:
+        checkDigitBox->setCurrentText("奇校验");
+        break;
+    case MB_EVEN_PARITY:
+        checkDigitBox->setCurrentText("偶校验");
+        break;
+    default:
+        checkDigitBox->setCurrentText("未知");
+        break;
+    }
+
+    if(cfg.modbusBaudrate < DeviceOperator::N_DEV_BAUDRATE)
+        baudRateBox->setCurrentText(QString::number(DeviceOperator::DeviceBaudrateList[cfg.modbusBaudrate]));
+    else
+        baudRateBox->setCurrentText(tr("未知"));
+
+    DataGatherConfiguration curCfg = equArray[0];
+    for(int i = 0; i < CHANNELSIZE; i++){
+        radioArray[i]->setChecked( curCfg.inputMode & (0x01U << i));
+        //logshow->append(curCfg.inputMode& (0x01U << i) ? "1":"0");    //打印checkArray
+    }
 }
+
 void    CollectionSetting::onSetDevConfigFinished(bool isok)
 {
     if(isok){
         logshow->append(QString("update success!"));
     }else{
-         logshow->append(QString("update faild!"));
+        logshow->append(QString("update faild!"));
     }
 }
 
-void    CollectionSetting::updateSendText(QByteArray msg){
+void    CollectionSetting::updateSendText(QByteArray msg)
+{
     QString str =  msg.toHex().toUpper();
     int len = str.length()/2;
     for(int i = 0; i < len; i++){
@@ -262,7 +353,9 @@ void    CollectionSetting::updateSendText(QByteArray msg){
     }
     logshow->append("[send]>>" + str);
 }
-void    CollectionSetting::updateRecvText(QByteArray msg){
+
+void    CollectionSetting::updateRecvText(QByteArray msg)
+{
     QString str = msg.toHex().toUpper();
     int len = str.length()/2;
     for(int i = 0; i < len; i++){
@@ -271,30 +364,38 @@ void    CollectionSetting::updateRecvText(QByteArray msg){
     logshow->append("[recv]<<" + str);
 }
 
-void    CollectionSetting::test(QString str){
-    qDebug() << "========================================----" << str << endl;
+////////////////////////////////////////////////////////////////
+
+void CollectionSetting::showPortInfo(QString portName)
+{
+    if(helper->dasConfig->dasData.comName.indexOf(portName) != -1){
+        logshow->append(QString("warning!!! port:%1 is dasconfig.comName ").arg(portName));
+    }
 }
 
-////////////////////////////////////////////////////////////////
-void CollectionSetting::updateCheckArray(QString str)
+void CollectionSetting::updateCheckArray(int index)
 {
-    qDebug() << "equArray.size = " << helper->equArray.size() << endl;
-    qDebug() << "radioArray.size = " << radioArray.size() << endl;
-    qDebug()<<"str=" << str << endl;
-    DataGatherConfiguration curCfg = helper->equArray[str.toInt() -1];
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
+    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+
+    qDebug() << "equArray.size = " << equArray.size() << endl;
+    qDebug() << "first dev's devId is " << equArray[0].devID << endl;
+
+    DataGatherConfiguration curCfg = equArray[index];
     for(int i = 0; i < CHANNELSIZE; i++){
         radioArray[i]->setChecked( curCfg.inputMode & (0x01U << i));
         //logshow->append(curCfg.inputMode& (0x01U << i) ? "1":"0");    //打印checkArray
     }
-    connect(helper->deviceOperator, SIGNAL(deviceADCResultGot(int,uint16_t*)), this, SLOT(updateADCLine(int, uint16_t *)));
-    helper->deviceOperator->getDeviceADCRes(helper->equArray[modNumBox->currentIndex()].devID);
+    //update adcLine
+    deviceOperator->getDeviceADCRes(0 ,equArray[0].devID);
 }
 
 void CollectionSetting::updateADCLine(int devId, uint16_t *pRes)
 {
-    const uint16_t devInputMode = helper->equArray[modNumBox->currentIndex()].inputMode;
-    const double ACK = helper->equArray[modNumBox->currentIndex()].AcSensorSpan * sqrt(2.0) / (2047.0 * 16);
-    const double DCK = (helper->equArray[modNumBox->currentIndex()].DcSensorSpan == 0 ? 20 : helper->equArray[modNumBox->currentIndex()].DcSensorSpan) / (4095.0 * 16);
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
+    const uint16_t devInputMode = equArray[0].inputMode;
+    const double ACK = equArray[0].AcSensorSpan * sqrt(2.0) / (2047.0 * 16);
+    const double DCK = (equArray[0].DcSensorSpan == 0 ? 20 : equArray[modNumBox->currentIndex()].DcSensorSpan) / (4095.0 * 16);
     int ch = 0;
     double adcRes;
 
@@ -309,4 +410,22 @@ void CollectionSetting::updateADCLine(int devId, uint16_t *pRes)
 
 CollectionSetting::~CollectionSetting()
 {
+    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+
+    if(deviceOperator->port != NULL){
+        deviceOperator->port->close();
+        delete deviceOperator->port;
+        deviceOperator->port = NULL;
+    }
+    if(deviceOperator != NULL){
+        delete deviceOperator;
+        deviceOperator = NULL;
+    }
+}
+
+void CollectionSetting::test()
+{
+    static bool flag = false;
+    flag = !flag;
+    radioArray[0]->setChecked(flag);
 }

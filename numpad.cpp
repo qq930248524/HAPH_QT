@@ -34,9 +34,11 @@ void NumPad::getOneNum()
 
 void NumPad::enter()
 {
-    if(mmm == "000000"){
-        done(Accepted);
-    }else{
-        done(Rejected);
-    }
+    done(Accepted);//TODO
+
+//    if(mmm == "000000"){
+//        done(Accepted);
+//    }else{
+//        done(Rejected);
+//    }
 }

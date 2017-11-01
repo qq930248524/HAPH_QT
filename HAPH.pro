@@ -7,7 +7,7 @@ QT += core gui serialport widgets network
 target.path = /home/HAPH/
 INSTALLS += target
 
- LIBS += -L/opt/tslib/lib/ -lts
+# LIBS += -L/opt/tslib/lib/ -lts
 
 TEMPLATE = app
 TARGET = HAPH
@@ -18,7 +18,6 @@ HEADERS += mainwindow.h \
            timewidget.h \
            setting/DMSNavigation.h \
            setting/settingdialog.h \
-           setting/settingwidget.h \
            helper/Mqtt/qmqtt.h \
            helper/Mqtt/qmqtt_client.h \
            helper/Mqtt/qmqtt_client_p.h \
@@ -59,7 +58,6 @@ SOURCES += main.cpp \
            timewidget.cpp \
            setting/DMSNavigation.cpp \
            setting/settingdialog.cpp \
-           setting/settingwidget.cpp \
            helper/Mqtt/qmqtt_client.cpp \
            helper/Mqtt/qmqtt_client_p.cpp \
            helper/Mqtt/qmqtt_frame.cpp \
@@ -89,4 +87,5 @@ SOURCES += main.cpp \
 RESOURCES += pic.qrc
 
 FORMS += \
-    numpad.ui
+    numpad.ui \
+    setting/tableWidget/zigbeesetting.ui

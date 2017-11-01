@@ -76,8 +76,16 @@ int DasConfig::getModeNumByDevid(int devid)
     if(dasData.comName.isEmpty()){
         return -1;
     }
+
     for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
-        if(dasData.enterprise.Modules[i].Id == devid){
+        Module oneModule = dasData.enterprise.Modules[i];
+
+        int zigBeeId = 0;
+        zigBeeId |= oneModule.ZigBeeId.mid(2,2).toInt()<<8;
+        zigBeeId |= oneModule.ZigBeeId.mid(4,2).toInt();
+
+        if(oneModule.Id == devid ||
+                zigBeeId == devid){
             return i;
         }
     }

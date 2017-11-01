@@ -30,6 +30,7 @@ public slots:
     bool sendData(QString );
     bool dcac(bool isDC);
     bool door(bool isOpen);
+    bool sensor(bool isOn, QString num);
 };
 
 #endif // MQTTOPERATOR_H

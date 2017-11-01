@@ -55,7 +55,7 @@ void DeviceOperator::getDeviceInfo(int dev)
     const int   nRegsToRead = MB_REG_ADCRES_ADDR - REG_HOLDING_START;
 
     if(dev >= MB_MIN_DEVICE_ADDR && dev <= MB_MAX_DEVICE_ADDR)
-        success = readDevRegister(registerBuffer, dev, REG_HOLDING_START, nRegsToRead);
+        success = readDevRegister(registerBuffer, 0, dev, REG_HOLDING_START, nRegsToRead);
 
     DataGatherConfiguration cfg;
     cfg.devID = dev;
@@ -78,9 +78,6 @@ void DeviceOperator::setDeviceConfig(DataGatherConfiguration oldCfg, DataGatherC
     int dev = oldCfg.devID;
 
     uint16_t modbusConfigRegSetting = (newCfg.devID << 8) | (newCfg.parity << 4) | (newCfg.modbusBaudrate & 0x0F);
-
-    if(!devIsLegal(newCfg.devID))
-        goto jobFailed;
 
     if(newCfg.modbusBaudrate >= N_DEV_BAUDRATE)
         goto jobFailed;
@@ -148,46 +145,104 @@ void DeviceOperator::calibrateDevice(int dev)
     emit finishedDevCalibrate(fSuccess);
 }
 
-void DeviceOperator::getDeviceADCRes(int dev)
+void DeviceOperator::getDeviceADCRes(int hostId, int slaveId)
 {
     // 保存读取到的采集器采集结果的数组，如果读取成功，需要由相应的类在接收到消息时释放，否则由该函数释放。
     uint16_t* pRegs = new uint16_t[MB_REG_ADCRES_LENGTH];
 
-    // 检查是否设备地址合法
-    if(!devIsLegal(dev))
-        return;
-
     // 读取设备采集结果寄存器组
-    if(readDevRegister(pRegs, dev, MB_REG_ADCRES_ADDR, MB_REG_ADCRES_LENGTH))
+    if(readDevRegister(pRegs, hostId, slaveId, MB_REG_ADCRES_ADDR, MB_REG_ADCRES_LENGTH))
     {
-        emit deviceADCResultGot(dev, pRegs);
+        emit deviceADCResultGot(slaveId, pRegs);
     }
     else
     {
-        emit deviceADCResultGot(dev, NULL);
+        emit deviceADCResultGot(slaveId, NULL);
         delete [] pRegs;
     }
 }
-
-bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg, uint16_t nRegisters)
+bool DeviceOperator::setNetAddress(uint16_t addr)
 {
+    if(!port->isOpen())
+        return false;
+    char msgBuffer[32] = {};
+    int  msgLen = 0;
 
+    //DE DF EF D2 01 01
+    msgBuffer[msgLen++] = 0xde;
+    msgBuffer[msgLen++] = 0xdf;
+    msgBuffer[msgLen++] = 0xef;
+    msgBuffer[msgLen++] = 0xd2;
+    msgBuffer[msgLen++] = HI_BYTE(addr);
+    msgBuffer[msgLen++] = LO_BYTE(addr);
+
+    // 清空接收和发送数据，准备发送消息并接受响应消息。
+    port->clear();
+    // 启动数据发送
+    if(0 < port->write(msgBuffer, msgLen))
+    {
+        port->waitForBytesWritten(500);
+        port->flush();
+        emit    sendMsg(QByteArray(msgBuffer, msgLen));
+    } else {
+        return false;
+    }
+
+    // 等待数据发送完成
+    if(port->waitForReadyRead(500))
+    {
+        uint8_t recvBuffer[256] = { 0 };
+        int     recvLength = 0;
+
+        do
+        {
+            recvLength += port->read((char *)(recvBuffer + recvLength), 256-recvLength);
+        }
+        while(port->waitForReadyRead(50));
+        emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
+    qDebug("----------------------------");
+        /* 响应数据已经接收完，开始消息处理 */
+        uint8_t okRes[] = {0xDE, 0xDF, 0xEF, 0xD2, 0x00};
+
+        int ret = 0;
+        for(int i = 0; i < recvLength; i++){
+            ret += recvBuffer[i] ^ okRes[i];
+        }
+            qDebug() << (ret?"-------------------false":
+                            "-------------------true") ;
+        return ret?false:true;
+    }
+    else    // 没有收到设备的反馈
+    {
+        qDebug("[serial] read data timeout!");
+        return false;
+    }
+}
+
+bool DeviceOperator::readDevRegister(uint16_t* pRegs, int hostId, int slaveId,
+                                     uint16_t startreg, uint16_t nRegisters)
+{
     if(!pRegs)
         return false;
 
     if(!port->isOpen())
         return false;
 
-    if(!devIsLegal(dev))
-        return false;
+    if(hostId){//use zigbee
+        if(!setNetAddress(slaveId))
+            return false;
+    }
 
     char msgBuffer[32] = {};
     int  msgLen = 0;
 
-    if(useZigbee){
-        msgBuffer[msgLen++] = 0x00;
+    if(hostId){//use zigbee
+        msgBuffer[msgLen++] = HI_BYTE(hostId);
+        msgBuffer[msgLen++] = LO_BYTE(hostId);
+    }else{
+        msgBuffer[msgLen++] = LO_BYTE(slaveId);
     }
-    msgBuffer[msgLen++] = dev;
+
     msgBuffer[msgLen++] = MB_CODE_FUNC_READ_REG;
     msgBuffer[msgLen++] = HI_BYTE(startreg);
     msgBuffer[msgLen++] = LO_BYTE(startreg);
@@ -201,11 +256,11 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
 
     // 清空接收和发送数据，准备发送消息并接受响应消息。
     port->clear();
-
+qDebug("==========================");
     // 启动数据发送
     if(0 < port->write(msgBuffer, msgLen))
     {
-        port->waitForBytesWritten(250);
+        port->waitForBytesWritten(500);
         port->flush();
         emit    sendMsg(QByteArray(msgBuffer, msgLen));
     }
@@ -229,7 +284,7 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
         emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
 
         /* 响应数据已经接收完，开始消息处理 */
-        if(recvLength != nRegisters*2 + (useZigbee?6:5))
+        if(recvLength != nRegisters*2 + (hostId?6:5))
             return false;
 
         // 检查消息CRC是否正确
@@ -239,21 +294,25 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
         int msgOffset = 0;
 
         // 检查发送方ID
-        if(useZigbee){
-            msgOffset++;
+        if(hostId){//use zigbee
+            if(recvBuffer[msgOffset++] != HI_BYTE(hostId) ||
+                    recvBuffer[msgOffset++] != LO_BYTE(hostId)){
+                return false;
+            }
+        }else{
+            if(recvBuffer[msgOffset++] != slaveId){
+                return false;
+            }
         }
-
-        if(recvBuffer[msgOffset++] != dev)
-            return false;
 
         // 检查发送方反馈功能码
         if(recvBuffer[msgOffset++] != MB_CODE_FUNC_READ_REG)
             return false;
-
+qDebug("==========================");
         // 检查是否收到完整的数据
         if(recvBuffer[msgOffset++] != nRegisters * 2)
             return false;
-
+qDebug("==========================");
         // ok! 收到期待的反馈响应，提取接收到的寄存器值
         for(int regIndex = 0; regIndex < nRegisters; ++regIndex)
         {
@@ -273,9 +332,6 @@ bool DeviceOperator::readDevRegister(uint16_t* pRegs, int dev, uint16_t startreg
 bool DeviceOperator::writeDevRegister(int dev, uint16_t regAddr, uint16_t value)
 {
     if(!port->isOpen())
-        return false;
-
-    if(!devIsLegal(dev))
         return false;
 
     char msgBuffer[32];
