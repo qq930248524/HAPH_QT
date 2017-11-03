@@ -1,4 +1,3 @@
-
 #include "mainwindow.h"
 #include "timewidget.h"
 #include "helper/QGauge/qgauge.h"

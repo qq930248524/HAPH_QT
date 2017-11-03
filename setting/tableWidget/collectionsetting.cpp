@@ -73,13 +73,15 @@ void CollectionSetting::initMidWidgetUI()
         comNum.append(onePort.portName());
     }
     portNumBox->addItems(comNum);
+    portNumBox->setCurrentIndex(0);
     modNumBox->addItems(QStringList()<<"1"<<"2"<<"3"<<"4"<<"5"<<"6"<<"7"<<"8");
+    modNumBox->setCurrentIndex(0);
     checkDigitBox->addItems(QStringList()<<"NO"<<"Odd"<<"Even");
+    checkDigitBox->setCurrentIndex(2);
     for(int i = 0; i < DeviceOperator::N_DEV_BAUDRATE; i++){
         baudRateBox->addItem(QString("%1").arg(DeviceOperator::DeviceBaudrateList[i]));
     }
-    //baudRateBox->addItems(QStringList()<<"300"<<"600"<<"1200"<<"4800"<<"9600"<<"19200"<<"38400"<<"56000"<<"115200");
-    baudRateBox->setCurrentIndex(8);
+    baudRateBox->setCurrentIndex(5);
 
     //////////////////////////////////////////////////////////////////////////
     QHBoxLayout *hLayout1 = new QHBoxLayout();
@@ -131,7 +133,7 @@ void CollectionSetting::initButtonArrayUI()
     connect(setModNum,      SIGNAL(pressed()), this, SLOT(setModNum()));
     connect(setPassType,    SIGNAL(pressed()), this, SLOT(setPassType()));
     connect(readPassData,   SIGNAL(pressed()), this, SLOT(readPassData()));
-//    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(readZigbeeData()));
+    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(readZigbeeData()));
 //    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(test()));
 
     QVBoxLayout *vLayout    = new QVBoxLayout();
@@ -156,6 +158,7 @@ void CollectionSetting::initDev()
 {    
     DeviceOperator * deviceOperator = new DeviceOperator(NULL);
     deviceOperator->useZigbee = false;
+    helper->setting_deviceOperator = deviceOperator;
 
     connect(deviceOperator, SIGNAL(deviceInformationGot(bool,DataGatherConfiguration)),
             this, SLOT(onGotDevInfo(bool,DataGatherConfiguration)));
@@ -169,10 +172,8 @@ void CollectionSetting::initDev()
             this, SLOT(updateSendText(QByteArray)));
     connect(deviceOperator, SIGNAL(recvMsg(QByteArray)),
             this, SLOT(updateRecvText(QByteArray)));
-    connect(deviceOperator, SIGNAL(deviceADCResultGot(int,uint16_t*)),
-            this, SLOT(updateADCLine(int, uint16_t *)));
-
-    helper->setting_deviceOperator = deviceOperator;
+    connect(deviceOperator, SIGNAL(deviceADCResultGot(int,int32_t*)),
+            this, SLOT(updateADCLine(int, int32_t *)));
 }
 
 /*************** btn SLOT************************/
@@ -390,12 +391,12 @@ void CollectionSetting::updateCheckArray(int index)
     deviceOperator->getDeviceADCRes(0 ,equArray[0].devID);
 }
 
-void CollectionSetting::updateADCLine(int devId, uint16_t *pRes)
+void CollectionSetting::updateADCLine(int devId, int32_t *pRes)
 {
     QVector<DataGatherConfiguration> &equArray = helper->equArray;
     const uint16_t devInputMode = equArray[0].inputMode;
     const double ACK = equArray[0].AcSensorSpan * sqrt(2.0) / (2047.0 * 16);
-    const double DCK = (equArray[0].DcSensorSpan == 0 ? 20 : equArray[modNumBox->currentIndex()].DcSensorSpan) / (4095.0 * 16);
+    const double DCK = (equArray[0].DcSensorSpan == 0 ? 20 : equArray[0].DcSensorSpan) / (4095.0 * 16);
     int ch = 0;
     double adcRes;
 

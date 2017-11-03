@@ -18,16 +18,17 @@ class ZigbeeSetting : public QFrame
 public:
     explicit ZigbeeSetting(QWidget *parent = 0);
     ~ZigbeeSetting();
-    void updatePar();
+
 
 protected slots:
     /*slot btn*/
     void getPar();
     void setPar();
     /*slot deviceOperator*/
+    void    onGetOneDevCfg(bool fSuccess, DataGatherConfiguration);
     void    onSetDevConfigFinished(bool isOK);
-    void    updateSendText(QByteArray msg);
-    void    updateRecvText(QByteArray msg);
+    void    z_updateSendText(QByteArray msg);
+    void    z_updateRecvText(QByteArray msg);
 
 private:
     Ui::ZigbeeSetting *ui;

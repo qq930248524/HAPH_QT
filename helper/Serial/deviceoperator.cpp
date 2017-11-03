@@ -50,7 +50,7 @@ void DeviceOperator::searchDevices()
 
 void DeviceOperator::getDeviceInfo(int dev)
 {
-    uint16_t    registerBuffer[32];
+    int32_t    registerBuffer[32];
     bool        success = false;
     const int   nRegsToRead = MB_REG_ADCRES_ADDR - REG_HOLDING_START;
 
@@ -148,7 +148,7 @@ void DeviceOperator::calibrateDevice(int dev)
 void DeviceOperator::getDeviceADCRes(int hostId, int slaveId)
 {
     // 保存读取到的采集器采集结果的数组，如果读取成功，需要由相应的类在接收到消息时释放，否则由该函数释放。
-    uint16_t* pRegs = new uint16_t[MB_REG_ADCRES_LENGTH];
+    int32_t* pRegs = new int32_t[MB_REG_ADCRES_LENGTH];
 
     // 读取设备采集结果寄存器组
     if(readDevRegister(pRegs, hostId, slaveId, MB_REG_ADCRES_ADDR, MB_REG_ADCRES_LENGTH))
@@ -219,7 +219,7 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
     }
 }
 
-bool DeviceOperator::readDevRegister(uint16_t* pRegs, int hostId, int slaveId,
+bool DeviceOperator::readDevRegister(int32_t* pRegs, int hostId, int slaveId,
                                      uint16_t startreg, uint16_t nRegisters)
 {
     if(!pRegs)
@@ -404,7 +404,7 @@ bool DeviceOperator::writeDevRegister(int dev, uint16_t regAddr, uint16_t value)
  * 从获取到的采集器设备寄存器中解析该设备的配置信息
  * devRegs指针指向从设备硬件版本寄存器开始的设备寄存器数组。
  */
-bool DeviceOperator::parseDeviceConfig(DataGatherConfiguration& cfg, uint16_t* devRegs, int nRegs)
+bool DeviceOperator::parseDeviceConfig(DataGatherConfiguration& cfg, int32_t* devRegs, int nRegs)
 {
     // 确保读取设备寄存器时不会越出边界
     if(nRegs < MB_REG_CTRL_OFFSET)

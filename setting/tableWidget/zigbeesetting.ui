@@ -189,6 +189,51 @@
                 <pointsize>12</pointsize>
                </font>
               </property>
+              <item>
+               <property name="text">
+                <string>0x0101</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0102</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0103</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0104</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0105</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0106</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0107</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0108</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0109</string>
+               </property>
+              </item>
              </widget>
             </item>
            </layout>
@@ -391,6 +436,51 @@
                 <pointsize>12</pointsize>
                </font>
               </property>
+              <item>
+               <property name="text">
+                <string>0x0001</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0002</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0003</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0004</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0005</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0006</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0007</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0008</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>0x0009</string>
+               </property>
+              </item>
              </widget>
             </item>
            </layout>
@@ -485,6 +575,9 @@
          </property>
          <property name="frameShadow">
           <enum>QFrame::Sunken</enum>
+         </property>
+         <property name="lineWidth">
+          <number>0</number>
          </property>
          <property name="readOnly">
           <bool>true</bool>

@@ -56,7 +56,7 @@ private:
 
 public slots:
     void startSet();
-    void recvADCResult(int, uint16_t *);
+    void recvADCResult(int, int32_t *);
 
     void switchFullScreen();
     void checkInternet();

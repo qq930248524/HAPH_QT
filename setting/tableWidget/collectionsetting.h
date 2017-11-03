@@ -57,7 +57,7 @@ public slots:
     void    updateSendText(QByteArray msg);
     void    updateRecvText(QByteArray msg);
     void    updateCheckArray(int);
-    void    updateADCLine(int devId, uint16_t *data);
+    void    updateADCLine(int devId, int32_t *data);
 
 private :
     void    initDev();

@@ -37,7 +37,7 @@ signals:
     void finishedDevSearching();
     void finishedDevConfigSet(bool fSuccess);
     void finishedDevCalibrate(bool fSuccess);
-    void deviceADCResultGot(int dev, uint16_t* pRes);
+    void deviceADCResultGot(int dev, int32_t* pRes);
 
     void sendMsg(QByteArray);
     void recvMsg(QByteArray);
@@ -48,10 +48,10 @@ protected:
 
 private:
     bool setNetAddress(uint16_t);
-    bool readDevRegister(uint16_t* pRegs, int hostId, int slaveId
+    bool readDevRegister(int32_t* pRegs, int hostId, int slaveId
                          , uint16_t startreg, uint16_t nAddress);
     bool writeDevRegister(int dev, uint16_t address, uint16_t value);
-    bool parseDeviceConfig(DataGatherConfiguration&, uint16_t*, int);
+    bool parseDeviceConfig(DataGatherConfiguration&, int32_t*, int);
 
 private:
 
