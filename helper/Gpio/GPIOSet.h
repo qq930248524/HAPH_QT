@@ -13,6 +13,11 @@
 #define Beeper  117
 #define Door    115
 #define AC_DC   51
+//enabel 485 read/write
+#define UART_READ   0
+#define UART_WRIT   1
+#define UART2   12
+#define UART4   13
 
 enum PIN_DIRECTION{
     INPUT_PIN=0,
@@ -41,6 +46,7 @@ public:
     GPIOset();
     bool isDoor = false;
     bool isDcAc = false;
+    bool initUart();
 
     /*****************************************/
     /* gpio export */
@@ -50,9 +56,9 @@ public:
     /* gpio set dir */
     int gpio_set_dir(unsigned int gpio, const char *dir);
     /* gpio set value */
-    int gpio_set_value(unsigned int gpio, unsigned int value);
+    static int gpio_set_value(unsigned int gpio, unsigned int value);
     /* gpio get value */
-    int gpio_get_value(unsigned int gpio, unsigned int *value);
+    static int gpio_get_value(unsigned int gpio, unsigned int *value);
     /* gpio set edge */
     int gpio_set_edge(unsigned int gpio, const char *edge);
     /* gpio fd open */
@@ -61,6 +67,7 @@ public:
     int gpio_fd_close(int fd);
     /*// Callback called when SIGINT is sent to the process (Ctrl-C)
     void signal_handler(int sig);*/
+
 
 signals:
     void door(bool isOpen);

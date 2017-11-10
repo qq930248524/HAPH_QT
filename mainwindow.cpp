@@ -1,4 +1,3 @@
-
 #include "mainwindow.h"
 #include "timewidget.h"
 #include "helper/QGauge/qgauge.h"
@@ -15,121 +14,52 @@ Helper *helper  = NULL;
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    //1.serial mqtt dasconfig
     helper = new Helper();
-    connect(helper->deviceOperator, SIGNAL(deviceADCResultGot(int, int32_t*)),
-            this, SLOT(recvADCResult(int, int32_t *)));
     connect(helper->mqttOperator->client, SIGNAL(connected()),
             this, SLOT(mqttConnectted()));
     connect(helper->mqttOperator->client, SIGNAL(disconnected()),
             this, SLOT(mqttDisConnectted()));
 
+    //2.ui
+    setGeometry(0,0,800,480);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
     showWidget();//show grid widget
     checkInternet();
     checkSerial();
     checkMqtt();
 
-    DasData dasData = helper->dasConfig->dasData;
+    //3.uiTimer
     if(helper->checkSerial()){
-        log->append("serial open success!");
-        log->append("start run timer!");
-        timeId = startTimer(dasData.QueryDelay.toInt(), Qt::VeryCoarseTimer);
-    }else{
-        log->append("serial open error!");
-        log->append(QString("comName:%1 baund:%2")
-                    .arg(dasData.comName)
-                    .arg(dasData.BaudRate));
+        startTimer(helper->dasConfig->dasData.QueryDelay.toInt(), Qt::VeryCoarseTimer);
     }
-
-    setGeometry(0,0,800,480);
-    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
 }
 
 void MainWindow::timerEvent(QTimerEvent *event)
 {
     log->append("======= timeEvent ======");
-    if(!helper->checkSerial()){
-        log->append("serial open error!");
-        killTimer(timeId);
-        return;
-    }
+    int32_t modeData[CHANNELSIZE];
+    helper->getModeData(modeNum, &modeData[0]);
 
-    DasData dasData = helper->dasConfig->dasData;
-    QVector<Module> modeArr = dasData.enterprise.Modules;
+    Module oneModule = helper->dasConfig->dasData.enterprise.Modules[modeNum];
 
-    //zigbee
-    int hostId = 0;
-    int slaveId = 0;
 
-    //modbus
-    if(dasData.UseZigBee){
-        QString host = dasData.enterprise.Modules[modeNum++].ZigBeeId;
-        QString slave = dasData.enterprise.Modules[modeNum++].ZigBeeId;
-        hostId |= host.mid(2,2).toInt()<<8;
-        hostId |= host.mid(4,2).toInt();
-        slaveId |= slave.mid(2,2).toInt()<<8;
-        slaveId |= slave.mid(4,2).toInt();
-    }else{
-        hostId = 0;
-        slaveId = dasData.enterprise.Modules[modeNum++].Id;
-    }
-
-    helper->deviceOperator->getDeviceADCRes(hostId, slaveId);
-    if(modeNum == modeArr.size()){
-        modeNum = 0;
-    }
-}
-
-void MainWindow::recvADCResult(int devId, int32_t *pRef)
-{
-    log->append(QString("======= recvADCResult %1 ======").arg(devId));
     for(int i = 0; i< CHANNELSIZE; i++){
         QGauge *oneGauge = (QGauge *)gridWidget[i];
-        oneGauge->setLabel(QString("%1-%2").
-                           arg(helper->dasConfig->getModeNumByDevid(devId)+1).
-                           arg(i+1));
-        oneGauge->setUnits("");
-        oneGauge->setValue(0);
-        oneGauge->setDigitCount(1);
-        oneGauge->setMaxValue(100);
-        oneGauge->setMinValue(0);
-        oneGauge->setThreshold(90);
-    }
+        oneGauge->setLabel(QString("%1-%2").arg(modeNum+1).arg(i+1));
+        int channelIndex = oneModule.getChannelIdByIndex(i+1);
 
-    int modeNum = helper->dasConfig->getModeNumByDevid(devId);    
-    if(modeNum == -1 ){
-        qDebug() << "[UI] mode" << modeNum << " ofLine.";
-        goto Ext;
-    }
-
-    {
-        Module oneModule = helper->dasConfig->dasData.enterprise.Modules[modeNum];
-
-        int32_t *newVal = new int32_t[MB_REG_ADCRES_LENGTH];
-        for (int t = 0; t < CHANNELSIZE; t++){
-            newVal[t] = -1;
-        }
-        if(pRef != NULL){
-            foreach (Channel onechannel, oneModule.Channels) {
-                newVal[onechannel.Id] = pRef[onechannel.Id - 1];
-            }
-        }
-
-        //dasconfig mode and channel 编号从1开始
-        for(int i = 0; i < CHANNELSIZE; i++)
-        {
-            QGauge *oneGauge = (QGauge *)gridWidget[i];
+        if(modeData[modeNum*CHANNELSIZE+i] == -1 || channelIndex == -1){
+            oneGauge->setValue(0);
             oneGauge->setMinValue(0);
             oneGauge->setMaxValue(100);
-            oneGauge->setValue(0);
+            oneGauge->setThreshold(90);
             oneGauge->setUnits("--");
-            oneGauge->setDigitCount(0);
 
-            int channelId = -1;
-            if(( channelId = oneModule.getChannelIdByIndex(i+1)) == -1){
-                continue;
-            }
-            Channel oneChannel = oneModule.Channels[channelId];
-
+            oneGauge->setDigitCount(1);
+            oneGauge->setValue(0);
+        }else{
+            Channel oneChannel = oneModule.Channels[channelIndex];
             //数据采集器采样原始电流换算公式如下：
             //  1、DC（0~20mA）：数据采集器采用通道上传数据为DC_Data，
             //      采样实际电流I实际=（DC_Data*20）/（4096*16）；
@@ -141,9 +71,9 @@ void MainWindow::recvADCResult(int devId, int32_t *pRef)
 
             double Iin;
             if(oneChannel.ACOrDC == "DC"){
-                Iin = (newVal[oneChannel.Id-1]*20)/(4096*16);
+                Iin = (modeData[i]*20)/(4096*16);
             }else{
-                Iin = (newVal[oneChannel.Id-1]*20*sqrt(2.0))/(2047*16);
+                Iin = (modeData[i]*20*sqrt(2.0))/(2047*16);
             }
             Iin = Iin<oneChannel.InputValueMin ? oneChannel.InputValueMin:Iin;
 
@@ -153,50 +83,43 @@ void MainWindow::recvADCResult(int devId, int32_t *pRef)
                     /(oneChannel.InputValueMax-oneChannel.InputValueMin)
                     +oneChannel.OutputValueMin;
 
-            if(isOriginal){                
+            if(isOriginal == false){
                 oneGauge->setMinValue(oneChannel.OutputValueMin);
                 oneGauge->setMaxValue(oneChannel.OutputValueMax);
                 oneGauge->setThreshold(oneChannel.OutputValueMax*0.9);
                 oneGauge->setUnits(oneChannel.DataUnit);
+                oneGauge->setDigitCount(getDigCount(Iout));
                 oneGauge->setValue(Iout);
             }else{
                 oneGauge->setMinValue(oneChannel.InputValueMin);
                 oneGauge->setMaxValue(oneChannel.InputValueMax);
                 oneGauge->setThreshold(oneChannel.InputValueMax*0.9);
                 oneGauge->setUnits(oneChannel.DataUnit);
+                oneGauge->setDigitCount(getDigCount(Iin));
                 oneGauge->setValue(Iin);
             }
             qDebug() << "[UI] Iin = "<< Iin << " Iout = " << Iout;
-
         }
-
-        // MQTT sendData
-        // don't care data format
-        DasData dasData = helper->dasConfig->dasData;
-        QString current_date_time = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
-        QString msg;
-        msg.append(current_date_time);
-        for(int i = 0; i < CHANNELSIZE; i++){
-            msg.append(QString(",%1-%2-%3:%4")
-                       .arg(dasData.enterprise.DeviceId, 3, 10)
-                       .arg(devId)
-                       .arg(i+1)
-                       .arg(newVal[i]));
-        }
-        if(helper->mqttOperator->sendData(msg) == false){
-            checkInternet();
-            checkMqtt();
-        }
-
-        delete newVal;
-        newVal = NULL;
     }
 
-Ext:
-    if(pRef != NULL){
-        delete pRef;
+    if(++modeNum == helper->dasConfig->dasData.enterprise.Modules.size()){
+        modeNum = 0;
     }
-    return;
+}
+
+int MainWindow::getDigCount(double data)
+{
+    int left = data;
+    double right = data - left;
+
+    int digCount = 1;
+    if(left/1000 != 0)  digCount++;
+    if(left/100 != 0)   digCount++;
+    if(left/10  != 0)   digCount++;
+
+    if(right>0.001)   digCount+=4;
+
+    return digCount;
 }
 
 void MainWindow::showWidget()
@@ -244,7 +167,12 @@ void MainWindow::showWidget()
     connect(btn_serial,     SIGNAL(pressed()), this, SLOT(checkSerial()));
     connect(btn_mqtt,       SIGNAL(pressed()), this, SLOT(checkMqtt()));
     connect(btn_data,       SIGNAL(pressed()), this, SLOT(conversionData()));
-    connect(btn_full,       SIGNAL(pressed()), this, SLOT(switchFullScreen()));
+    connect(btn_full,       SIGNAL(clicked()), this, SLOT(switchFullScreen()));
+    btn_internet->setFocusPolicy(Qt::NoFocus);
+    btn_serial->setFocusPolicy(Qt::NoFocus);
+    btn_mqtt->setFocusPolicy(Qt::NoFocus);
+    btn_data->setFocusPolicy(Qt::NoFocus);
+    btn_full->setFocusPolicy(Qt::NoFocus);
     btn_mqtt->setStyleSheet(ofStr);
     btn_data->setStyleSheet(ofStr);
     btn_full->setStyleSheet(ofStr);
@@ -304,17 +232,20 @@ void MainWindow::showWidget()
 
 void MainWindow::startSet()
 {
-    helper->deviceOperator->port->close();
+
     NumPad numPad(this);
     if(numPad.exec() == QDialog::Accepted){
+        helper->stopRun();
         settingDialog = new SettingDialog();
         this->hide();
         settingDialog->show();
+
         settingDialog->exec();
         this->show();
         delete settingDialog;
+        helper->gotoRun();
     }
-    helper->initSerial();
+
 }
 
 void MainWindow::switchFullScreen()
@@ -337,21 +268,27 @@ void MainWindow::switchFullScreen()
     }
 }
 
-void MainWindow::checkInternet(){
-//    QString cmd("ping -c 3 -i 0.5 www.baidu.com");
-//    if(!system(cmd.toLatin1().data())){
-//        btn_internet->setStyleSheet(onStr);
-//        log->append("[internet] online!");
-//        qDebug() << "[internet] online";
-//    }else{
-//        btn_internet->setStyleSheet(ofStr);
-//        log->append("[internet] offline!");
-//        qDebug() << "[internet] offline";
-//    }
-    btn_internet->setStyleSheet(ofStr);
+void MainWindow::checkInternet()
+{
+    if(networkManager == NULL){
+        networkManager = new QNetworkConfigurationManager();
+        connect(networkManager, SIGNAL(onlineStateChanged(bool)),
+                this, SLOT(networkStatusChanges(bool)));
+    }
+    if(networkManager->isOnline() == true){
+        btn_internet->setStyleSheet(onStr);
+        log->append("[internet] online!");
+        qDebug() << "[internet] online";
+    }else{
+        btn_internet->setStyleSheet(ofStr);
+        log->append("[internet] offline!");
+        qDebug() << "[internet] offline";
+    }
 }
 
-void MainWindow::checkSerial(){
+void MainWindow::checkSerial()
+{
+    DasData dasData = helper->dasConfig->dasData;
     if(helper->checkSerial()){//on
         btn_serial->setStyleSheet(onStr);
         log->append("[serial] open success!");
@@ -372,6 +309,19 @@ void MainWindow::checkMqtt(){
     }else{
         log->append("[MQTT] is closed and will reStart mqtt...");
         helper->initMqtt();
+    }
+}
+
+void MainWindow::networkStatusChanges(bool isOnline)
+{
+    if(isOnline == true){
+        btn_internet->setStyleSheet(onStr);
+        log->append("[internet] online!");
+        qDebug() << "[internet] online";
+    }else{
+        btn_internet->setStyleSheet(ofStr);
+        log->append("[internet] offline!");
+        qDebug() << "[internet] offline";
     }
 }
 

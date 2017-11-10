@@ -129,7 +129,7 @@ void CollectionSetting::initButtonArrayUI()
     QPushButton *readPassData   = new QPushButton("读取通道数据");
     QPushButton *readZigbeeData = new QPushButton("zigbee取数据");
 
-    connect(searchModNum,   SIGNAL(pressed()), this, SLOT(searchModNum()));
+    connect(searchModNum,   SIGNAL(clicked()), this, SLOT(searchModNum()));
     connect(setModNum,      SIGNAL(pressed()), this, SLOT(setModNum()));
     connect(setPassType,    SIGNAL(pressed()), this, SLOT(setPassType()));
     connect(readPassData,   SIGNAL(pressed()), this, SLOT(readPassData()));
@@ -157,7 +157,6 @@ void CollectionSetting::initButtonArrayUI()
 void CollectionSetting::initDev()
 {    
     DeviceOperator * deviceOperator = new DeviceOperator(NULL);
-    deviceOperator->useZigbee = false;
     helper->setting_deviceOperator = deviceOperator;
 
     connect(deviceOperator, SIGNAL(deviceInformationGot(bool,DataGatherConfiguration)),
@@ -187,6 +186,15 @@ void    CollectionSetting::searchModNum()
         deviceOperator->port = serialPort;
     }
 
+    if(portNumBox->currentText() == "/dev/ttyS1"){
+        deviceOperator->useZigbee = true;
+        deviceOperator->hostId |= helper->dasConfig->dasData.ZigBeeId.mid(2,2).toInt()<<8;
+        deviceOperator->hostId |= helper->dasConfig->dasData.ZigBeeId.mid(4,2).toInt();
+    }else{
+        deviceOperator->useZigbee = false;
+        deviceOperator->hostId = 0;
+    }
+
     if(serialPort->isOpen()){
         serialPort->close();
     }
@@ -205,7 +213,6 @@ void    CollectionSetting::searchModNum()
         serialPort->setParity(QSerialPort::NoParity);
         break;
     }
-
 
     if(serialPort->open(QIODevice::ReadWrite)){
         logshow->append(QString("打开串口<%1>成功! ").arg(serialPort->portName()));
@@ -227,6 +234,10 @@ void    CollectionSetting::setModNum()
     QVector<DataGatherConfiguration> &equArray = helper->equArray;
     DeviceOperator *deviceOperator = helper->setting_deviceOperator;
 
+    if(equArray.isEmpty()){
+        logshow->append("请先搜索模块");
+        return;
+    }
     DataGatherConfiguration newCfg = equArray[0];
     newCfg.devID = modNumBox->currentText().toInt();
     newCfg.modbusBaudrate = baudRateBox->currentIndex();
@@ -239,6 +250,10 @@ void    CollectionSetting::setPassType()
 {
     QVector<DataGatherConfiguration> &equArray = helper->equArray;
     DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+    if(equArray.isEmpty()){
+        logshow->append("请先搜索模块");
+        return;
+    }
 
     DataGatherConfiguration newCfg = equArray[0];
     newCfg.inputMode = 0;
@@ -253,12 +268,27 @@ void    CollectionSetting::setPassType()
 
 void    CollectionSetting::readPassData()
 {
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
     DeviceOperator *deviceOperator = helper->setting_deviceOperator;
-    deviceOperator->getDeviceADCRes(0, helper->equArray[0].devID);
+    if(equArray.isEmpty()){
+        logshow->append("请先搜索模块");
+        return;
+    }
+
+    deviceOperator->getDeviceADCRes(helper->equArray[0].devID);
     qDebug() << "===================" << modNumBox->currentData().toInt() << endl;
 }
 
-void    CollectionSetting::readZigbeeData(){}
+void    CollectionSetting::readZigbeeData()//TODO
+{
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
+    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+    if(equArray.isEmpty()){
+        logshow->append("请先搜索模块");
+        return;
+    }
+
+}
 
 
 /*********** devOperator SLOT ******************/
@@ -388,7 +418,7 @@ void CollectionSetting::updateCheckArray(int index)
         //logshow->append(curCfg.inputMode& (0x01U << i) ? "1":"0");    //打印checkArray
     }
     //update adcLine
-    deviceOperator->getDeviceADCRes(0 ,equArray[0].devID);
+    deviceOperator->getDeviceADCRes(equArray[0].devID);
 }
 
 void CollectionSetting::updateADCLine(int devId, int32_t *pRes)
@@ -412,6 +442,11 @@ void CollectionSetting::updateADCLine(int devId, int32_t *pRes)
 CollectionSetting::~CollectionSetting()
 {
     DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+    QVector<DataGatherConfiguration> &equArray = helper->equArray;
+
+    if(equArray.isEmpty() == false){
+        equArray.clear();
+    }
 
     if(deviceOperator->port != NULL){
         deviceOperator->port->close();

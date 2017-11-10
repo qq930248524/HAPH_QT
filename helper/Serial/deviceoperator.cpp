@@ -1,12 +1,14 @@
 
-
 #include <QtSerialPort/QSerialPort>
 #include <iostream>
 #include <QDebug>
+#include <QtGlobal>
+#include <sys/time.h>
 
 #include "modbuscrc.h"
 #include "deviceoperator.h"
 #include "deviceregistermap.h"
+#include "../Gpio/GPIOSet.h"
 
 const int DeviceOperator::DeviceBaudrateList[N_DEV_BAUDRATE] = {
     300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200
@@ -18,6 +20,12 @@ DeviceOperator::DeviceOperator(QSerialPort* port, bool useZigbee, int maxID) :
     useZigbee(useZigbee),
     maxSearchID(maxID)
 {
+
+#ifdef ARM
+    isArm = true;
+#else
+    isArm = false;
+#endif
 }
 
 void DeviceOperator::stop()
@@ -35,6 +43,7 @@ void DeviceOperator::run()
     stopped = true;
 }
 
+//搜索10个设备
 void DeviceOperator::searchDevices()
 {
 
@@ -48,6 +57,7 @@ void DeviceOperator::searchDevices()
     emit finishedDevSearching();
 }
 
+//获取单个设备信息
 void DeviceOperator::getDeviceInfo(int dev)
 {
     int32_t    registerBuffer[32];
@@ -55,7 +65,7 @@ void DeviceOperator::getDeviceInfo(int dev)
     const int   nRegsToRead = MB_REG_ADCRES_ADDR - REG_HOLDING_START;
 
     if(dev >= MB_MIN_DEVICE_ADDR && dev <= MB_MAX_DEVICE_ADDR)
-        success = readDevRegister(registerBuffer, 0, dev, REG_HOLDING_START, nRegsToRead);
+        success = readDevRegister(registerBuffer,dev, REG_HOLDING_START, nRegsToRead);
 
     DataGatherConfiguration cfg;
     cfg.devID = dev;
@@ -72,6 +82,7 @@ void DeviceOperator::getDeviceInfo(int dev)
     }
 }
 
+//设置设备配置信息
 void DeviceOperator::setDeviceConfig(DataGatherConfiguration oldCfg, DataGatherConfiguration newCfg)
 {
     bool writeSuccess = false;
@@ -133,8 +144,8 @@ void DeviceOperator::setDeviceConfig(DataGatherConfiguration oldCfg, DataGatherC
 
     return;
 
-// 出错了，发送出错信号
-    jobFailed:
+    // 出错了，发送出错信号
+jobFailed:
     emit finishedDevConfigSet(false);
 }
 
@@ -145,13 +156,14 @@ void DeviceOperator::calibrateDevice(int dev)
     emit finishedDevCalibrate(fSuccess);
 }
 
-void DeviceOperator::getDeviceADCRes(int hostId, int slaveId)
+//获取单个通道数据
+void DeviceOperator::getDeviceADCRes(int slaveId)
 {
     // 保存读取到的采集器采集结果的数组，如果读取成功，需要由相应的类在接收到消息时释放，否则由该函数释放。
     int32_t* pRegs = new int32_t[MB_REG_ADCRES_LENGTH];
 
     // 读取设备采集结果寄存器组
-    if(readDevRegister(pRegs, hostId, slaveId, MB_REG_ADCRES_ADDR, MB_REG_ADCRES_LENGTH))
+    if(readDevRegister(pRegs, slaveId, MB_REG_ADCRES_ADDR, MB_REG_ADCRES_LENGTH))
     {
         emit deviceADCResultGot(slaveId, pRegs);
     }
@@ -161,6 +173,26 @@ void DeviceOperator::getDeviceADCRes(int hostId, int slaveId)
         delete [] pRegs;
     }
 }
+
+//获取数组中所有设备通道数据
+void DeviceOperator::onGetAllpRef(int32_t *idArray)
+{
+    int32_t devNum = idArray[0]-1;
+    int32_t dataSize = devNum * MB_REG_ADCRES_LENGTH;
+
+    int32_t data[dataSize];//reset -1
+    for(int i = 0; i < dataSize; i++){
+        data[i] = -1;
+    }
+
+    for(int i = 0; i < devNum; i++){
+        readDevRegister(&data[i*MB_REG_ADCRES_LENGTH], idArray[1+i],MB_REG_ADCRES_ADDR, MB_REG_ADCRES_LENGTH);
+    }
+
+    emit getAllpRef(data);
+}
+
+//设置本地目标设备地址 only 232/S1
 bool DeviceOperator::setNetAddress(uint16_t addr)
 {
     if(!port->isOpen())
@@ -178,7 +210,7 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
 
     // 清空接收和发送数据，准备发送消息并接受响应消息。
     port->clear();
-    // 启动数据发送
+    // --------------------------------启动数据发送
     if(0 < port->write(msgBuffer, msgLen))
     {
         port->waitForBytesWritten(500);
@@ -188,7 +220,7 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
         return false;
     }
 
-    // 等待数据发送完成
+    // --------------------------------启动数据读取
     if(port->waitForReadyRead(500))
     {
         uint8_t recvBuffer[256] = { 0 };
@@ -200,7 +232,7 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
         }
         while(port->waitForReadyRead(50));
         emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
-    qDebug("----------------------------");
+        qDebug("----------------------------");
         /* 响应数据已经接收完，开始消息处理 */
         uint8_t okRes[] = {0xDE, 0xDF, 0xEF, 0xD2, 0x00};
 
@@ -208,8 +240,8 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
         for(int i = 0; i < recvLength; i++){
             ret += recvBuffer[i] ^ okRes[i];
         }
-            qDebug() << (ret?"-------------------false":
-                            "-------------------true") ;
+        qDebug() << (ret?"-------------------false":
+                         "-------------------true") ;
         return ret?false:true;
     }
     else    // 没有收到设备的反馈
@@ -219,7 +251,13 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
     }
 }
 
-bool DeviceOperator::readDevRegister(int32_t* pRegs, int hostId, int slaveId,
+/*****************************************************
+ *  ttyS1  232 zigbee  need set targetId
+ *  ttyS2  485 modbus  need control GPIO0_12
+ *  ttyS4  485 modbus  need control GPIO0_13
+ * ****************************************************/
+//获取采集器数据
+bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
                                      uint16_t startreg, uint16_t nRegisters)
 {
     if(!pRegs)
@@ -228,105 +266,143 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int hostId, int slaveId,
     if(!port->isOpen())
         return false;
 
-    if(hostId){//use zigbee
+    if(useZigbee){//232
         if(!setNetAddress(slaveId))
             return false;
     }
-
     char msgBuffer[32] = {};
     int  msgLen = 0;
-
-    if(hostId){//use zigbee
+    if(useZigbee){
         msgBuffer[msgLen++] = HI_BYTE(hostId);
         msgBuffer[msgLen++] = LO_BYTE(hostId);
     }else{
-        msgBuffer[msgLen++] = LO_BYTE(slaveId);
+        msgBuffer[msgLen++] = slaveId;
     }
-
     msgBuffer[msgLen++] = MB_CODE_FUNC_READ_REG;
     msgBuffer[msgLen++] = HI_BYTE(startreg);
     msgBuffer[msgLen++] = LO_BYTE(startreg);
     msgBuffer[msgLen++] = HI_BYTE(nRegisters);
     msgBuffer[msgLen++] = LO_BYTE(nRegisters);
-
     uint16_t crc = usMBCRC16((uint8_t*)msgBuffer, msgLen);
-
     msgBuffer[msgLen++] = LO_BYTE(crc);
     msgBuffer[msgLen++] = HI_BYTE(crc);
 
     // 清空接收和发送数据，准备发送消息并接受响应消息。
     port->clear();
-qDebug("==========================");
-    // 启动数据发送
-    if(0 < port->write(msgBuffer, msgLen))
-    {
-        port->waitForBytesWritten(500);
-        port->flush();
-        emit    sendMsg(QByteArray(msgBuffer, msgLen));
-    }
-    else
-    {
-        return false;
-    }
+    port->flush();
 
+    // ----------------------------------------启动数据发送
+    if(useZigbee == false && isArm){// enable 485 write
 
-    // 等待数据发送完成
-    if(port->waitForReadyRead(500))
-    {
-        uint8_t recvBuffer[256] = { 0 };
-        int     recvLength = 0;
-
-        do
-        {
-            recvLength += port->read((char *)(recvBuffer + recvLength), 256-recvLength);
-        }
-        while(port->waitForReadyRead(50));
-        emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
-
-        /* 响应数据已经接收完，开始消息处理 */
-        if(recvLength != nRegisters*2 + (hostId?6:5))
-            return false;
-
-        // 检查消息CRC是否正确
-        if(usMBCRC16(recvBuffer, recvLength))
-            return false;
-
-        int msgOffset = 0;
-
-        // 检查发送方ID
-        if(hostId){//use zigbee
-            if(recvBuffer[msgOffset++] != HI_BYTE(hostId) ||
-                    recvBuffer[msgOffset++] != LO_BYTE(hostId)){
-                return false;
-            }
+        if(port->portName().indexOf("S2")){
+            qDebug() << "=================================isArm" << port->portName();
+            GPIOset::gpio_set_value(UART2, UART_WRIT);
+        }else if(port->portName().indexOf("S4")){
+            GPIOset::gpio_set_value(UART4, UART_WRIT);
         }else{
-            if(recvBuffer[msgOffset++] != slaveId){
-                return false;
-            }
-        }
-
-        // 检查发送方反馈功能码
-        if(recvBuffer[msgOffset++] != MB_CODE_FUNC_READ_REG)
+            qDebug()<< LABEL + "error 没有找到对应串口";
             return false;
-qDebug("==========================");
-        // 检查是否收到完整的数据
-        if(recvBuffer[msgOffset++] != nRegisters * 2)
-            return false;
-qDebug("==========================");
-        // ok! 收到期待的反馈响应，提取接收到的寄存器值
-        for(int regIndex = 0; regIndex < nRegisters; ++regIndex)
-        {
-            pRegs[regIndex]  = recvBuffer[msgOffset++] << 8U;
-            pRegs[regIndex] |= recvBuffer[msgOffset++];
         }
-
-        return true;
     }
-    else    // 没有收到设备的反馈
-    {
-        qDebug("[serial] read data timeout!");
+
+    if(port->write(msgBuffer, msgLen) == -1){
+        qDebug() << LABEL + "数据发送失败";
         return false;
     }
+
+    if(port->waitForBytesWritten(250) == false){
+        qDebug() << LABEL + "数据write失败 timeout! ";
+        return false;
+    }    
+
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
+    do{
+        gettimeofday(&end, NULL);
+    }while(end.tv_usec-start.tv_usec<3200);
+
+    emit    sendMsg(QByteArray(msgBuffer, msgLen));
+
+    QString str =  QByteArray(msgBuffer, msgLen).toHex().toUpper();
+    int len = str.length()/2;
+    for(int i = 0; i < len; i++){
+        str.insert(2*i+i-1, " ");
+    }
+    qDebug() << "[send]>>" << str;
+
+    //----------------------------------------启动读取数据
+    if(useZigbee == false && isArm){// enable 485 write
+        if(port->portName().indexOf("S2")){
+            GPIOset::gpio_set_value(UART2, UART_READ);
+        }else if(port->portName().indexOf("S4")){
+            GPIOset::gpio_set_value(UART4, UART_READ);
+        }else{
+            qDebug()<< LABEL + "error 没有找到对应串口";
+            return false;
+        }
+    }
+
+
+    port->clear();
+    if(port->waitForReadyRead(250) == false){
+        qDebug() << LABEL + "数据read失败 timeout! ";
+        return false;
+    }
+
+    uint8_t recvBuffer[256] = { 0 };
+    int     recvLength = 0;
+    do
+    {
+        recvLength += port->read((char *)(recvBuffer + recvLength), 256-recvLength);
+    }
+    while(port->waitForReadyRead(50));
+    emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
+
+//    str =  QByteArray((char *)recvBuffer, recvLength).toHex().toUpper();
+//    len = str.length()/2;
+//    for(int i = 0; i < len; i++){
+//        str.insert(2*i+i-1, " ");
+//    }
+//    qDebug() << "[recv]<<" << str;
+
+
+    /* 响应数据已经接收完，开始消息处理 */
+    if(recvLength != nRegisters*2 + (hostId?6:5))
+        return false;
+
+    // 检查消息CRC是否正确
+    if(usMBCRC16(recvBuffer, recvLength))
+        return false;
+
+    int msgOffset = 0;
+
+    // 检查发送方ID
+    if(useZigbee){//use zigbee
+        if(recvBuffer[msgOffset++] != HI_BYTE(hostId) ||
+                recvBuffer[msgOffset++] != LO_BYTE(hostId)){
+            return false;
+        }
+    }else{
+        if(recvBuffer[msgOffset++] != slaveId){
+            return false;
+        }
+    }
+
+    // 检查发送方反馈功能码
+    if(recvBuffer[msgOffset++] != MB_CODE_FUNC_READ_REG)
+        return false;
+
+    // 检查是否收到完整的数据
+    if(recvBuffer[msgOffset++] != nRegisters * 2)
+        return false;
+
+    // ok! 收到期待的反馈响应，提取接收到的寄存器值
+    for(int regIndex = 0; regIndex < nRegisters; ++regIndex)
+    {
+        pRegs[regIndex]  = recvBuffer[msgOffset++] << 8U;
+        pRegs[regIndex] |= recvBuffer[msgOffset++];
+    }
+    return true;
 }
 
 bool DeviceOperator::writeDevRegister(int dev, uint16_t regAddr, uint16_t value)
@@ -338,7 +414,10 @@ bool DeviceOperator::writeDevRegister(int dev, uint16_t regAddr, uint16_t value)
     int  msgLen = 0;
 
     if(useZigbee){
-        msgBuffer[msgLen++] = 0x00;
+        msgBuffer[msgLen++] = HI_BYTE(hostId);
+        msgBuffer[msgLen++] = LO_BYTE(hostId);
+    }else{
+        msgBuffer[msgLen++] = dev;
     }
     msgBuffer[msgLen++] = dev;
     msgBuffer[msgLen++] = MB_CODE_FUNC_WRITE_REG;
@@ -355,49 +434,71 @@ bool DeviceOperator::writeDevRegister(int dev, uint16_t regAddr, uint16_t value)
     // 清空接收和发送数据，准备发送消息并接受响应消息。
     port->clear();
 
-    // 启动数据发送
-    if(0 < port->write(msgBuffer, msgLen))
-    {
-        port->waitForBytesWritten(250);
-        port->flush();
+    // ----------------------------启动数据发送
+    if(useZigbee == false && isArm){// enable 485 write
+        if(port->portName().indexOf("S2")){
+            GPIOset::gpio_set_value(UART2, UART_WRIT);
+        }else if(port->portName().indexOf("S4")){
+            GPIOset::gpio_set_value(UART4, UART_WRIT);
+        }else{
+            qDebug()<< LABEL + "error 没有找到对应串口";
+            return false;
+        }
     }
-    else
+    if(port->write(msgBuffer, msgLen) == -1){
+        qDebug() << LABEL + "数据发送失败";
+    }
+    if(port->waitForBytesWritten(250) == false){
+        qDebug() << LABEL + "数据write失败 timeout! ";
         return false;
+    }
+    port->flush();
     emit    sendMsg(QByteArray(msgBuffer, msgLen));
 
-    // 等待数据发送完成
-    if(port->waitForReadyRead(250))
-    {
-        uint8_t recvBuffer[256] = { 0 };
-        int recvLength = 0;
-
-        do
-        {
-            recvLength += port->read((char *)(recvBuffer + recvLength), 256-recvLength);
-        }
-        while(port->waitForReadyRead(50));
-        emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
-
-        // 检查消息CRC是否正确
-        if(usMBCRC16(recvBuffer, recvLength))
-        {
-            std::cout << "write register error, received " << recvLength << " bytes esponse." << std::endl;
+    // ------------------------启动数据读取
+    if(useZigbee == false && isArm){// enable 485 read
+        if(port->portName().indexOf("S2")){
+            GPIOset::gpio_set_value(UART2, UART_READ);
+        }else if(port->portName().indexOf("S4")){
+            GPIOset::gpio_set_value(UART4, UART_READ);
+        }else{
+            qDebug()<< LABEL + "error 没有找到对应串口";
             return false;
         }
-
-        // 检查写设备寄存器是否成功
-        if(recvBuffer[0] != dev)
-            return false;
-
-        // 如果这个反馈功能码不对，说明写寄存器操作出错
-        if(recvBuffer[1] != MB_CODE_FUNC_WRITE_REG)
-            return false;
-
-        // write success
-        return true;
+    }
+    if(port->waitForReadyRead(250) == false){
+        qDebug() << LABEL + "数据read失败 timeout! ";
+        return false;
     }
 
-    return false;
+    uint8_t recvBuffer[256] = { 0 };
+    int recvLength = 0;
+
+    do
+    {
+        recvLength += port->read((char *)(recvBuffer + recvLength), 256-recvLength);
+    }
+    while(port->waitForReadyRead(50));
+    emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
+
+    //------------------------------check data
+    // 检查消息CRC是否正确
+    if(usMBCRC16(recvBuffer, recvLength))
+    {
+        std::cout << "write register error, received " << recvLength << " bytes esponse." << std::endl;
+        return false;
+    }
+
+    // 检查写设备寄存器是否成功
+    if(recvBuffer[0] != dev)
+        return false;
+
+    // 如果这个反馈功能码不对，说明写寄存器操作出错
+    if(recvBuffer[1] != MB_CODE_FUNC_WRITE_REG)
+        return false;
+
+    // write success
+    return true;
 }
 
 /*

@@ -14,24 +14,41 @@
 
 GPIOset::GPIOset()
 {
+    initUart();
 }
 
-
-void GPIOset::run()
+bool GPIOset::initUart()
 {
+#ifdef x86
+    return false;
+#endif
+
     int ret = 0;
+    ret += gpio_export(UART2);
+    ret += gpio_set_dir(UART2, "out");
+    ret += gpio_export(UART4);
+    ret += gpio_set_dir(UART4, "out");
     ret += gpio_export(Door);
     ret += gpio_set_edge(Door, "both");
     ret += gpio_export(AC_DC);
     ret += gpio_set_edge(AC_DC, "both");
     ret += gpio_export(Beeper);
     ret += gpio_set_dir(Beeper, "out");
+
     if(ret != 0){
-        qCritical() << LABEL + "set gpio export or dir error! ";
-        return;
+        qCritical() << LABEL + "gpio初始化错误 ! ";
+        return false;
     }
+    gpio_set_value(UART2, UART_READ);
+    gpio_set_value(UART4, UART_READ);
+
+    return true;
+
+}
 
 
+void GPIOset::run()
+{
     const int dfsSize = 2;
     struct pollfd fds[dfsSize];
     fds[0].fd = gpio_fd_open(Door, O_RDONLY);
@@ -41,8 +58,7 @@ void GPIOset::run()
 
     while(1){
         qDebug() << LABEL + "start poll!=============================";
-        ret = poll(fds, dfsSize, -1);
-        if(ret == -1){
+        if(poll(fds, dfsSize, -1) == -1){
             qCritical()<<LABEL + "poll error! ";
             return;
         }
@@ -75,7 +91,6 @@ void GPIOset::run()
         }
     }
 }
-
 
 /* gpio export */
 int GPIOset::gpio_export(unsigned int gpio)

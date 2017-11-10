@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QTime>
 #include <QHostInfo>
 #include <QMainWindow>
 #include <QVBoxLayout>
@@ -9,8 +10,9 @@
 #include <QWidget>
 #include <QTextEdit>
 #include <QPushButton>
-#include <setting/settingdialog.h>
+#include <QNetworkConfigurationManager>
 
+#include <setting/settingdialog.h>
 #include "helper/helper.h"
 
 extern Helper *helper;
@@ -37,14 +39,6 @@ public:
     QTextEdit *log;
     QPushButton *setting;
     QLabel *timing;
-
-    SettingDialog *settingDialog;
-protected:
-    void timerEvent(QTimerEvent *event);
-
-private:
-    void showWidget();
-
     const QString onStr = QString("background-color:green; min-width:60px; min-height:40px;");
     const QString ofStr = QString("background-color:gray; min-width:60px; min-height:40px;");
     QPushButton *btn_internet;
@@ -52,11 +46,20 @@ private:
     QPushButton *btn_mqtt;
     QPushButton *btn_data;
     QPushButton *btn_full;
-    int     timeId;
+
+    SettingDialog *settingDialog;
+
+protected:
+    void timerEvent(QTimerEvent *event);
+
+private:
+    void showWidget();
+    QTimer *dasTimer = NULL;
+    QNetworkConfigurationManager *networkManager;
+    int getDigCount(double data);
 
 public slots:
     void startSet();
-    void recvADCResult(int, int32_t *);
 
     void switchFullScreen();
     void checkInternet();
@@ -66,6 +69,7 @@ public slots:
 
     void mqttConnectted();
     void mqttDisConnectted();
+    void networkStatusChanges(bool);
 };
 
 #endif // MAINWINDOW_H

@@ -7,7 +7,9 @@ QT += core gui serialport widgets network
 target.path = /home/HAPH/
 INSTALLS += target
 
-LIBS += -L/opt/tslib/lib/ -lts
+contains(DEFINES,ARM){
+    LIBS += -L/opt/tslib/lib/ -lts
+}
 
 TEMPLATE = app
 TARGET = HAPH

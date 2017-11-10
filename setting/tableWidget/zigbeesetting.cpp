@@ -77,10 +77,11 @@ void ZigbeeSetting::z_updateRecvText(QByteArray msg)
 void ZigbeeSetting::getPar()
 {
     if(helper->equArray.isEmpty() ||
+            helper->setting_deviceOperator == NULL  ||
+            helper->setting_deviceOperator->port == NULL ||
             !helper->setting_deviceOperator->port->isOpen()){
         ui->logshow->setText("请先搜索设备!");
         ui->logshow->append(QString("equArray.size:%1").arg(helper->equArray.size()));
-        ui->logshow->append(QString("equArray.port:%1").arg(helper->setting_deviceOperator->port->isOpen()));
         return;
     }
 
