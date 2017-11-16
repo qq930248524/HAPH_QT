@@ -6,12 +6,21 @@ ZigbeeSetting::ZigbeeSetting(QWidget *parent) :
     ui(new Ui::ZigbeeSetting)
 {
     ui->setupUi(this);
-    ui->logshow->clear();
+//    ui->logshow->clear();
 
-    connect(ui->pushButton_getPar, SIGNAL(pressed()), this, SLOT(getPar()));
-    connect(ui->pushButton_setPar, SIGNAL(pressed()), this, SLOT(setPar()));
+//    connect(ui->pushButton_getPar, SIGNAL(pressed()), this, SLOT(getPar()));
+//    connect(ui->pushButton_setPar, SIGNAL(pressed()), this, SLOT(setPar()));
 
-    DeviceOperator *deviceOperator = helper->setting_deviceOperator;
+//    initDev();
+}
+
+void ZigbeeSetting::initDev()
+{
+    return;
+    if(helper->setting_deviceOperator == NULL){
+        helper->setting_deviceOperator = new DeviceOperator(NULL);
+    }
+    deviceOperator = helper->setting_deviceOperator;
 
     connect(deviceOperator, SIGNAL(sendMsg(QByteArray)),
             this, SLOT(z_updateSendText(QByteArray)));
@@ -23,6 +32,18 @@ ZigbeeSetting::ZigbeeSetting(QWidget *parent) :
             this, SLOT(onSetDevConfigFinished(bool)));
 }
 
+void ZigbeeSetting::getU()
+{
+//    ui->logshow->clear();
+//    if(helper->setting_deviceOperator != NULL) {
+//        disconnect(helper->setting_deviceOperator);
+//        delete helper->setting_deviceOperator;
+//        helper->setting_deviceOperator = NULL;
+//    }
+
+//    initDev();
+}
+
 /************* deviceOperator slot ***************/
 void ZigbeeSetting::onGetOneDevCfg(bool fSuccess, DataGatherConfiguration cfg)
 {
@@ -30,6 +51,7 @@ void ZigbeeSetting::onGetOneDevCfg(bool fSuccess, DataGatherConfiguration cfg)
         ui->logshow->append("获取设备参数失败!");
         return;
     }else{
+        ui->logshow->clear();
         ui->logshow->append("成功获取设备参数! ");
         ui->logshow->append(QString("localAddr:%1").arg(cfg.zigbeeLocalAddress, 4, 16, QChar('0')));
         ui->logshow->append(QString("targeAddr:%1").arg(cfg.zigbeeTargetAddress, 4, 16, QChar('0')));

@@ -54,7 +54,9 @@ HEADERS += mainwindow.h \
     helper/watchdog/watchdog.h \
     helper/Gpio/GPIOSet.h \
     helper/Gpio/gpioset.h \
-    helper/Gpio/GPIOSet.h
+    helper/Gpio/GPIOSet.h \
+    helper/dataControl/datacontrol.h \
+    helper/Data/dataoperator.h
 SOURCES += main.cpp \
            mainwindow.cpp \
            timewidget.cpp \
@@ -85,7 +87,8 @@ SOURCES += main.cpp \
     numpad.cpp \
     helper/Mqtt/mqttoperator.cpp \
     helper/watchdog/watchdog.cpp \
-    helper/Gpio/GPIOSet.cpp
+    helper/Gpio/GPIOSet.cpp \
+    helper/Data/dataoperator.cpp
 RESOURCES += pic.qrc
 
 FORMS += \

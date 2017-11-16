@@ -28,9 +28,9 @@ public slots:
     void mqttConnectted();
     void mqttDisConnectted();
     bool sendData(QString );
-    bool dcac(bool isDC);
-    bool door(bool isOpen);
-    bool sensor(bool isOn, QString num);
+    bool sendPower(bool isDC, QString payload);
+    bool sendDoor(bool isOpen, QString payload);
+    bool sendSensor(bool isOn, QString payload);
 };
 
 #endif // MQTTOPERATOR_H

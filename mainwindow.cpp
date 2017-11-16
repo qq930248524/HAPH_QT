@@ -8,6 +8,7 @@
 #include <QFrame>
 #include <QLayout>
 #include <QDebug>
+#include <iostream>
 
 Helper *helper  = NULL;
 
@@ -60,7 +61,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
             oneGauge->setValue(0);
         }else{
             Channel oneChannel = oneModule.Channels[channelIndex];
-            //数据采集器采样原始电流换算公式如下：
+            //数据采集器采样原始电流换算公式如下： //量程为输入量程
             //  1、DC（0~20mA）：数据采集器采用通道上传数据为DC_Data，
             //      采样实际电流I实际=（DC_Data*20）/（4096*16）；
             //  2、AC（0~20mA）：数据采集器采用通道上传数据为AC_Data，
@@ -73,7 +74,11 @@ void MainWindow::timerEvent(QTimerEvent *event)
             if(oneChannel.ACOrDC == "DC"){
                 Iin = (modeData[i]*20)/(4096*16);
             }else{
-                Iin = (modeData[i]*20*sqrt(2.0))/(2047*16);
+                if(oneChannel.InputValueMax == 20){
+                    Iin = (modeData[i]*20*sqrt(2.0))/(2047*16);
+                }else if(oneChannel.InputValueMax == 100){
+                    Iin = (modeData[i]*100*sqrt(2.0))/(2047*16);
+                }
             }
             Iin = Iin<oneChannel.InputValueMin ? oneChannel.InputValueMin:Iin;
 
@@ -98,7 +103,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
                 oneGauge->setDigitCount(getDigCount(Iin));
                 oneGauge->setValue(Iin);
             }
-            qDebug() << "[UI] Iin = "<< Iin << " Iout = " << Iout;
+            //qDebug() << "[UI] Iin = "<< Iin << " Iout = " << Iout;
         }
     }
 
@@ -245,7 +250,6 @@ void MainWindow::startSet()
         delete settingDialog;
         helper->gotoRun();
     }
-
 }
 
 void MainWindow::switchFullScreen()
@@ -330,6 +334,7 @@ void MainWindow::mqttConnectted()
     log->append("[MQTT] has connectted. ");
     btn_mqtt->setStyleSheet(onStr);
     helper->mqttOperator->isOnline = true;
+    helper->dataOperator->rePushPendingData();
 }
 void MainWindow::mqttDisConnectted()
 {

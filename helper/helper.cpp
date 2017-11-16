@@ -13,24 +13,34 @@ Helper::Helper(QObject *parent) : QObject(parent)
             dasDataBuf[i] = -1;
         }
     }
+
     initSerial();
     initMqtt();
     initGPIO();
-    gotoRun();
+    initDataControl();
+    gotoRun();//UI run
 }
 
 bool Helper::initGPIO()
 {
     //设置GPIO
     GPIOset *gpioSet = new GPIOset();
-    connect(gpioSet, SIGNAL(door(bool)), mqttOperator, SLOT());
-    connect(gpioSet, SIGNAL(dcac(bool)), mqttOperator, SLOT());
+    connect(gpioSet, SIGNAL(door(bool)), this, SLOT(sendDoor(bool)));
+    connect(gpioSet, SIGNAL(dcac(bool)), this, SLOT(sendPower(bool)));
 
     if(gpioSet->initUart() == true){
         gpioSet->start();
     }
     //TODO
 
+    return true;
+}
+
+bool Helper::initDataControl()
+{
+    if(dataOperator == NULL){
+        dataOperator = new DataOperator(mqttOperator);
+    }
     return true;
 }
 
@@ -196,7 +206,6 @@ void Helper::getModeData(int modeNum, int32_t *pData)
 }
 
 /********************** SLOT deviceOpt *********************/
-//TODO
 void Helper::onGetAllpRef_ret(int32_t *data)
 {
     QString msg = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
@@ -217,6 +226,7 @@ void Helper::onGetAllpRef_ret(int32_t *data)
         }
     }
     mqttOperator->sendData(msg);
+    dataOperator->save(DataOperator::GeneralData, msg);
 }
 
 //timer slot
@@ -243,4 +253,20 @@ void Helper::onGetAllpRef_time()
     }
 //TODO
     deviceOperator->onGetAllpRef(idArray);
+}
+
+
+/*********************** GPIO SLOT *************************/
+void Helper::sendDoor(bool isOn)
+{
+    QString msg = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
+    mqttOperator->sendDoor(isOn, msg);
+    dataOperator->save(isOn?(DataOperator::DoorOn):(DataOperator::DoorOff), msg);
+}
+
+void Helper::sendPower(bool isOn)
+{
+    QString msg = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
+    mqttOperator->sendDoor(isOn, msg);
+    dataOperator->save(isOn?(DataOperator::PowerOn):(DataOperator::PowerOff), msg);
 }

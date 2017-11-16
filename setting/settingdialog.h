@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QDialog>
 
+#include "DMSNavigation.h"
 #include "tableWidget/systemsetting.h"
 #include "tableWidget/collectionsetting.h"
 #include "tableWidget/zigbeesetting.h"
@@ -19,8 +20,12 @@ public:
 
 private:
     const int titleSize = 60;
-    CollectionSetting *tableCollection;
     DeviceOperator *deviceOperator;
+
+    QVector<QWidget *>  objArray;
+
+public slots:
+    void changedTO(int);
 };
 
 #endif // SETTINGDIALOG_H

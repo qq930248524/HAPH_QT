@@ -19,7 +19,7 @@ GPIOset::GPIOset()
 
 bool GPIOset::initUart()
 {
-#ifdef x86
+#ifndef ARM
     return false;
 #endif
 

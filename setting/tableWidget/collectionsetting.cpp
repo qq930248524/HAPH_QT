@@ -130,11 +130,11 @@ void CollectionSetting::initButtonArrayUI()
     QPushButton *readZigbeeData = new QPushButton("zigbee取数据");
 
     connect(searchModNum,   SIGNAL(clicked()), this, SLOT(searchModNum()));
-    connect(setModNum,      SIGNAL(pressed()), this, SLOT(setModNum()));
-    connect(setPassType,    SIGNAL(pressed()), this, SLOT(setPassType()));
-    connect(readPassData,   SIGNAL(pressed()), this, SLOT(readPassData()));
-    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(readZigbeeData()));
-//    connect(readZigbeeData, SIGNAL(pressed()), this, SLOT(test()));
+    connect(setModNum,      SIGNAL(clicked()), this, SLOT(setModNum()));
+    connect(setPassType,    SIGNAL(clicked()), this, SLOT(setPassType()));
+    connect(readPassData,   SIGNAL(clicked()), this, SLOT(readPassData()));
+    connect(readZigbeeData, SIGNAL(clicked()), this, SLOT(readZigbeeData()));
+//    connect(readZigbeeData, SIGNAL(clicked()), this, SLOT(test()));
 
     QVBoxLayout *vLayout    = new QVBoxLayout();
     vLayout->addWidget(searchModNum, 3, Qt::AlignTop);
@@ -155,9 +155,11 @@ void CollectionSetting::initButtonArrayUI()
     mainLayout->addWidget(frame);
 }
 void CollectionSetting::initDev()
-{    
-    DeviceOperator * deviceOperator = new DeviceOperator(NULL);
-    helper->setting_deviceOperator = deviceOperator;
+{
+    if(helper->setting_deviceOperator == NULL){
+        helper->setting_deviceOperator = new DeviceOperator(NULL);
+    }
+    deviceOperator = helper->setting_deviceOperator;
 
     connect(deviceOperator, SIGNAL(deviceInformationGot(bool,DataGatherConfiguration)),
             this, SLOT(onGotDevInfo(bool,DataGatherConfiguration)));
@@ -173,6 +175,20 @@ void CollectionSetting::initDev()
             this, SLOT(updateRecvText(QByteArray)));
     connect(deviceOperator, SIGNAL(deviceADCResultGot(int,int32_t*)),
             this, SLOT(updateADCLine(int, int32_t *)));
+}
+
+/*************** SLOT *******************/
+void    CollectionSetting::getU()
+{
+    this->logshow->clear();
+    if(helper->setting_deviceOperator != NULL
+            &&  helper->setting_deviceOperator->port != NULL) {
+        QSerialPort *port = helper->setting_deviceOperator->port;
+//        port->close();
+//        port->open(QIODevice::ReadWrite);
+    }
+    disconnect(deviceOperator);
+    initDev();
 }
 
 /*************** btn SLOT************************/
@@ -226,6 +242,7 @@ void    CollectionSetting::searchModNum()
     }
 
     helper->equArray.clear();
+    deviceOperator->setSearchMaxID(1);
     deviceOperator->searchDevices();
 }
 
@@ -452,10 +469,12 @@ CollectionSetting::~CollectionSetting()
         deviceOperator->port->close();
         delete deviceOperator->port;
         deviceOperator->port = NULL;
+        helper->setting_deviceOperator->port = NULL;
     }
     if(deviceOperator != NULL){
         delete deviceOperator;
         deviceOperator = NULL;
+        helper->setting_deviceOperator = NULL;
     }
 }
 

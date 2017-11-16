@@ -18,8 +18,11 @@ class ZigbeeSetting : public QFrame
 public:
     explicit ZigbeeSetting(QWidget *parent = 0);
     ~ZigbeeSetting();
+    DeviceOperator *deviceOperator = NULL;
+    void initDev();
 
-
+public slots:
+        void getU();
 protected slots:
     /*slot btn*/
     void getPar();

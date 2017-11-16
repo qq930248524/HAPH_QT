@@ -1,6 +1,4 @@
 #include "settingdialog.h"
-#include "DMSNavigation.h"
-
 
 #include <QTextEdit>
 #include <QLabel>
@@ -29,16 +27,20 @@ SettingDialog::SettingDialog(QWidget *par)
     connect(homeButton, SIGNAL(pressed()), this, SLOT(close()));
 
 /////////////////////////////////////   tableView   ///////////////////////////////////////
-    DMSNavigation *navi= new DMSNavigation();
+
+    objArray.append(new CollectionSetting());
+    objArray.append(new ZigbeeSetting());
+    objArray.append(new SystemSetting());
+    DMSNavigation *navi = new DMSNavigation();
+    navi->addTab(objArray[1], "ZigBee设置");
+    navi->addTab(objArray[0], "数据采集设置");
+    navi->addTab(objArray[2], "系统设置");
+    connect(navi, SIGNAL(currentChanged(int)), this, SLOT(changedTO(int)));
+
     navi->setHorizontalAlignment(navi->AlignLeft);
     navi->resize(800, 70);
     navi->show();
     navi->setFixedHeight(420);
-
-    navi->addTab(new SystemSetting(), "系统设置");
-    tableCollection = new CollectionSetting();
-    navi->addTab(tableCollection, "数据采集设置");
-    navi->addTab(new ZigbeeSetting(), "ZigBee设置");
 
 ///////////////////////////////////     mainLayout  //////////////////////////////////////////////
     QVBoxLayout *mainLayout = new QVBoxLayout();
@@ -52,5 +54,25 @@ SettingDialog::SettingDialog(QWidget *par)
     this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
 }
 
+void SettingDialog::changedTO(int index)
+{
+    switch (index) {
+    case 0:
+        ((CollectionSetting *)objArray[0])->getU();
+        break;
+    case 1:
+        ((ZigbeeSetting *)objArray[1])->getU();
+        break;
+    default:
+        break;
+    }
+}
+
 SettingDialog:: ~SettingDialog()
-{}
+{
+    for(int i = 0; i < objArray.size(); i++){
+        delete objArray[i];
+        objArray[i] = NULL;
+    }
+    objArray.clear();
+}

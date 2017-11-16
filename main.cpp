@@ -45,7 +45,7 @@ void outputMessage(QtMsgType type, const QMessageLogContext &context, const QStr
     QString current_date = QString("(%1)").arg(current_date_time);
     QString message = QString("%1 %2 %3 %4").arg(text).arg(msg).arg(context_info).arg(current_date);
 
-    QFile file("/etc/log.txt");
+    QFile file("/var/daslog.txt");
     file.open(QIODevice::ReadWrite | QIODevice::Append);
     QTextStream text_stream(&file);
     text_stream << message << "\r\n";

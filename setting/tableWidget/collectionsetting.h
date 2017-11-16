@@ -28,6 +28,9 @@ public:
     explicit CollectionSetting(QWidget *parent = 0);
     ~CollectionSetting();
     void closeCollection();
+
+    DeviceOperator * deviceOperator = NULL;
+
     QHBoxLayout *mainLayout;
 
     QVector<SwitchButton *>    radioArray;
@@ -43,6 +46,7 @@ signals:
 
 public slots:
     void    test();
+    void    getU();
     void    showPortInfo(QString);
     void    searchModNum();
     void    setModNum();

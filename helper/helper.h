@@ -7,11 +7,11 @@
 #include <QDateTime>
 #include <QSerialPort>
 
-#include "helper/Mqtt/mqttoperator.h"
-#include "helper/Gpio/GPIOSet.h"
-#include "helper/JsonConfig/dasConfig.h"
-#include "helper/Serial/deviceoperator.h"
-
+#include "Mqtt/mqttoperator.h"
+#include "Gpio/GPIOSet.h"
+#include "JsonConfig/dasConfig.h"
+#include "Serial/deviceoperator.h"
+#include "Data/dataoperator.h"
 
 #define CHANNELSIZE 12
 
@@ -19,19 +19,21 @@ class Helper : public QObject
 {
     Q_OBJECT
 public:
+    QString LABEL = QString("[Helper] ");
     explicit Helper(QObject *parent = 0);
 
-    DasConfig *dasConfig;
-    QString LABEL = QString("[Helper] ");
     QVector<DataGatherConfiguration>   equArray;
-    DeviceOperator  *setting_deviceOperator = NULL;
 
-    DeviceOperator  *deviceOperator = NULL;
+    DasConfig *dasConfig;
+    DataOperator    *dataOperator   = NULL;
     MqttOperator    *mqttOperator   = NULL;
+    DeviceOperator  *deviceOperator = NULL;
+    DeviceOperator  *setting_deviceOperator = NULL;
 
     bool checkSerial();
     bool checkMqtt();
 
+    bool initDataControl();
     bool initMqtt();
     bool initSerial();
     bool initGPIO();
@@ -49,6 +51,8 @@ signals:
 public slots:
     void onGetAllpRef_ret(int32_t *);
     void onGetAllpRef_time();
+    void sendDoor(bool);
+    void sendPower(bool);
 };
 
 #endif // HELPER_H
