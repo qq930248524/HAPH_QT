@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "timewidget.h"
-#include "helper/QGauge/qgauge.h"
+#include "shownum.h"
 #include "setting/settingdialog.h"
 #include "numpad.h"
 #include <QDateTime>
@@ -17,23 +17,22 @@ MainWindow::MainWindow(QWidget *parent)
 {
     //1.serial mqtt dasconfig
     helper = new Helper();
-    connect(helper->mqttOperator->client, SIGNAL(connected()),
-            this, SLOT(mqttConnectted()));
-    connect(helper->mqttOperator->client, SIGNAL(disconnected()),
-            this, SLOT(mqttDisConnectted()));
 
     //2.ui
     setGeometry(0,0,800,480);
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint);
     showWidget();//show grid widget
+    switchFullScreen();
     checkInternet();
     checkSerial();
     checkMqtt();
+
 
     //3.uiTimer
     if(helper->checkSerial()){
         startTimer(helper->dasConfig->dasData.QueryDelay.toInt(), Qt::VeryCoarseTimer);
     }
+    helper->dataOperator->test();
 }
 
 void MainWindow::timerEvent(QTimerEvent *event)
@@ -46,21 +45,20 @@ void MainWindow::timerEvent(QTimerEvent *event)
 
 
     for(int i = 0; i< CHANNELSIZE; i++){
-        QGauge *oneGauge = (QGauge *)gridWidget[i];
-        oneGauge->setLabel(QString("%1-%2").arg(modeNum+1).arg(i+1));
+        ShowNum *oneShow = (ShowNum *)gridWidget[i];
+        oneShow->setTitle(QString("%1-%2").arg(modeNum+1).arg(i+1));
+        oneShow->setName(" ");
+
+        Channel oneChannel;
         int channelIndex = oneModule.getChannelIdByIndex(i+1);
-
+        if(channelIndex != -1){
+            oneChannel = oneModule.Channels[channelIndex];
+            oneShow->setName(oneChannel.Name);
+            oneShow->setUnit(oneChannel.DataUnit);
+        }
         if(modeData[modeNum*CHANNELSIZE+i] == -1 || channelIndex == -1){
-            oneGauge->setValue(0);
-            oneGauge->setMinValue(0);
-            oneGauge->setMaxValue(100);
-            oneGauge->setThreshold(90);
-            oneGauge->setUnits("--");
-
-            oneGauge->setDigitCount(1);
-            oneGauge->setValue(0);
-        }else{
-            Channel oneChannel = oneModule.Channels[channelIndex];
+            oneShow->setValue(-1);
+        }else{            
             //数据采集器采样原始电流换算公式如下： //量程为输入量程
             //  1、DC（0~20mA）：数据采集器采用通道上传数据为DC_Data，
             //      采样实际电流I实际=（DC_Data*20）/（4096*16）；
@@ -89,24 +87,15 @@ void MainWindow::timerEvent(QTimerEvent *event)
                     +oneChannel.OutputValueMin;
 
             if(isOriginal == false){
-                oneGauge->setMinValue(oneChannel.OutputValueMin);
-                oneGauge->setMaxValue(oneChannel.OutputValueMax);
-                oneGauge->setThreshold(oneChannel.OutputValueMax*0.9);
-                oneGauge->setUnits(oneChannel.DataUnit);
-                oneGauge->setDigitCount(getDigCount(Iout));
-                oneGauge->setValue(Iout);
+                oneShow->setValue(Iout);
             }else{
-                oneGauge->setMinValue(oneChannel.InputValueMin);
-                oneGauge->setMaxValue(oneChannel.InputValueMax);
-                oneGauge->setThreshold(oneChannel.InputValueMax*0.9);
-                oneGauge->setUnits(oneChannel.DataUnit);
-                oneGauge->setDigitCount(getDigCount(Iin));
-                oneGauge->setValue(Iin);
+                if(isOriginal == false){
+                    oneShow->setValue(Iin);
+                }                
             }
             //qDebug() << "[UI] Iin = "<< Iin << " Iout = " << Iout;
         }
     }
-
     if(++modeNum == helper->dasConfig->dasData.enterprise.Modules.size()){
         modeNum = 0;
     }
@@ -131,32 +120,17 @@ void MainWindow::showWidget()
 {
     gridWidget.resize(CHANNELSIZE);
     for(int i = 0; i < CHANNELSIZE; i++){
-        QGauge *gauge = new QGauge();
-
-        QSizePolicy sizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-        gauge->setSizePolicy(sizePolicy);
-        gauge->setMinimumSize(120, 120);
-
-        gauge->setLabel(QString("%1-%2").arg(modeNum+1).arg(i+1));
-        gauge->setUnits("");
-
-        gauge->setMaxValue(100);
-        gauge->setMinValue(0);
-        gauge->setThreshold(90);
-        gauge->setValue(0);
-
-        QFont font;
-        font.setFamily(QStringLiteral("Ubuntu"));
-        font.setPointSize(11);
-        gauge->setFont(font);
-
-        gridWidget[i] =  gauge;
+        gridWidget[i] =  new ShowNum(this);
+        gridWidget[i]->setFixedSize(150,200);
     }
 
     gridLayout = new QGridLayout();
     for(int i = 0; i < gridWidget.size(); i++){
         gridLayout->addWidget(gridWidget.at(i),i/ROW, i%ROW, Qt::AlignCenter);
     }
+    gridLayout->setHorizontalSpacing(0);
+    gridLayout->setVerticalSpacing(0);
+
 
     /*---------  right frame  --------*/
     QFrame *rightFrame = new QFrame();
@@ -166,7 +140,7 @@ void MainWindow::showWidget()
     btn_serial     = new QPushButton("串口");
     btn_mqtt       = new QPushButton("MQTT");
     btn_data       = new QPushButton("原始数据");
-    btn_full       = new QPushButton("全屏");
+    btn_full        = new QPushButton("全屏");
 
     connect(btn_internet,   SIGNAL(pressed()), this, SLOT(checkInternet()));
     connect(btn_serial,     SIGNAL(pressed()), this, SLOT(checkSerial()));
@@ -194,6 +168,7 @@ void MainWindow::showWidget()
     /*****************  top Main  ***************/
     QHBoxLayout *topLayout      = new QHBoxLayout();
     topLayout->addLayout(gridLayout);
+    topLayout->addSpacing(20);
     topLayout->addWidget(rightFrame);
 
     QFrame *topFrame = new QFrame();
@@ -257,18 +232,19 @@ void MainWindow::switchFullScreen()
     QSize gaugeSize;
     if(isFull){
         bottomFrame->hide();
-        gaugeSize = QSize(150,150);
+        gaugeSize = QSize(170,155);
         btn_full->setStyleSheet(onStr);
         isFull = false;
     }else{
         bottomFrame->show();
-        gaugeSize = QSize(120,120);
+        gaugeSize = QSize(170,115);
         btn_full->setStyleSheet(ofStr);
         isFull = true;
     }
 
     for(int i = 0; i < gridWidget.size(); i++){
-        gridWidget[i]->setMinimumSize(gaugeSize);
+        //gridWidget[i]->setMinimumSize(gaugeSize);
+        gridWidget[i]->setFixedSize(gaugeSize);
     }
 }
 
@@ -289,7 +265,6 @@ void MainWindow::checkInternet()
         qDebug() << "[internet] offline";
     }
 }
-
 void MainWindow::checkSerial()
 {
     DasData dasData = helper->dasConfig->dasData;
@@ -306,8 +281,13 @@ void MainWindow::checkSerial()
         }
     }
 }
+void MainWindow::checkMqtt()
+{
+    connect(helper->mqttOperator->client, SIGNAL(connected()),
+            this, SLOT(mqttConnectted()));
+    connect(helper->mqttOperator->client, SIGNAL(disconnected()),
+            this, SLOT(mqttDisConnectted()));
 
-void MainWindow::checkMqtt(){
     if(helper->checkMqtt()){
         log->append("[MQTT] is connectted! ");
     }else{
@@ -327,11 +307,16 @@ void MainWindow::networkStatusChanges(bool isOnline)
         log->append("[internet] offline!");
         qDebug() << "[internet] offline";
     }
+    if(isOnline){
+        helper->initMqtt();
+    }else{
+        mqttDisConnectted();
+    }
 }
-
 void MainWindow::mqttConnectted()
 {
     log->append("[MQTT] has connectted. ");
+    qDebug() << "[MQTT] connectted !!! ";
     btn_mqtt->setStyleSheet(onStr);
     helper->mqttOperator->isOnline = true;
     helper->dataOperator->rePushPendingData();
@@ -339,6 +324,7 @@ void MainWindow::mqttConnectted()
 void MainWindow::mqttDisConnectted()
 {
     log->append("[MQTT] has disConnectted. ");
+    qDebug() << "[MQTT] disConnectted! --! ";
     btn_mqtt->setStyleSheet(ofStr);
     helper->mqttOperator->isOnline = false;
 }

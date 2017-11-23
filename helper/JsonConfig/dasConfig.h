@@ -56,6 +56,7 @@ public:
     bool    UseZigBee;
     quint32 BaudRate;
     QString ZigBeeId;
+    bool    EncryptLog;
     Enterprise enterprise;
 };
 

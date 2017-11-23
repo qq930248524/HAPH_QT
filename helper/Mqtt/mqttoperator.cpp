@@ -29,21 +29,54 @@ void MqttOperator::mqttDisConnectted()
     qDebug("[MQTT] connect mqtt [FAILD].");
 }
 
-bool MqttOperator::sendData(QString payLoad)
+void MqttOperator::onNeedPush(int type, QString payload)
 {
     if(client->isConnectedToHost() == false){
-        qDebug() << "[MQTT] [sendData] false. data:" << payLoad;
-        return false;
+        qDebug() << "[MQTT] [sendData] false. data:" << payload;
     }
+    switch (type) {
+    case GeneralData:
+        sendData(payload);
+        break;
+    case DoorOn:
+        sendDoor(true, payload);
+        break;
+    case DoorOff:
+        sendDoor(false, payload);
+        break;
+    case PowerOn:
+        sendPower(true, payload);
+        break;
+    case PowerOff:
+        sendPower(false, payload);
+        break;
+    case SensorOn:
+        sendSensor(true, payload);
+        break;
+    case SensorOff:
+        sendSensor(false, payload);
+        break;
+    default:
+        break;
+    }
+}
+
+bool MqttOperator::sendData(QString payLoad)
+{
     int qos = 1;
     QString dataTopic = QString("haph/cep/data/%1/%2")
             .arg(dasData->enterprise.Id)
             .arg(dasData->enterprise.SerialNo);
 
-    QMQTT::Message msg(0, dataTopic, payLoad.toLatin1(), qos);
-    client->publish(msg);
-    qDebug() << "[MQTT] [sendData]: " << dataTopic << payLoad;
-    return true;
+    if(client->isConnectedToHost() == false || isOnline == false){
+        qDebug() << "[MQTT] [sendData] false. data:" << dataTopic << payLoad;
+        return false;
+    }else{
+        QMQTT::Message msg(0, dataTopic, payLoad.toLatin1(), qos);
+        int abc = client->publish(msg);
+        qDebug() << "[MQTT] [sendData]: " << dataTopic << payLoad;
+        return true;
+    }
 }
 
 bool MqttOperator::sendPower(bool isDC, QString payLoad)

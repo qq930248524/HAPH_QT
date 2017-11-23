@@ -7,10 +7,13 @@ Helper::Helper(QObject *parent) : QObject(parent)
         qWarning("detail json error!");
     }else{
         modeSize = dasConfig->dasData.enterprise.Modules.size();
-
         dasDataBuf = new int [modeSize*CHANNELSIZE];
+        dasDataCounter = new int[modeSize];
         for(int i = 0; i < CHANNELSIZE*modeSize; i++){
             dasDataBuf[i] = -1;
+        }
+        for(int i = 0; i < modeSize; i++){
+            dasDataCounter[i] = -1;
         }
     }
 
@@ -39,7 +42,9 @@ bool Helper::initGPIO()
 bool Helper::initDataControl()
 {
     if(dataOperator == NULL){
-        dataOperator = new DataOperator(mqttOperator);
+        dataOperator = new DataOperator(mqttOperator, dasConfig->dasData.EncryptLog);
+        connect(dataOperator, SIGNAL(needPush(int,QString)),
+                mqttOperator, SLOT(onNeedPush(int,QString)));
     }
     return true;
 }
@@ -137,7 +142,7 @@ bool Helper::initMqtt()
 
     if(mqttOperator == NULL){
         mqttOperator = new MqttOperator(this, client, &dasConfig->dasData);
-    }
+    }  
 
     if(client->isConnectedToHost()){
         return true;
@@ -166,7 +171,6 @@ bool Helper::checkMqtt()
         return true;
 }
 
-
 /************************ UI fun *********************/
 void Helper::gotoRun()
 {
@@ -194,7 +198,7 @@ void Helper::stopRun()
     }
 }
 
-void Helper::getModeData(int modeNum, int32_t *pData)
+void Helper::getModeData(int modeNum, int32_t *pData)//ui slot
 {
     if(modeNum < 0 || modeNum >= modeSize || checkSerial() == false){
         for(int i = 0; i < CHANNELSIZE; i++){
@@ -214,6 +218,15 @@ void Helper::onGetAllpRef_ret(int32_t *data)
 
     for(int i = 0; i < devNum; i++){
         Module oneModule = dasConfig->dasData.enterprise.Modules[i];
+        if(data[i*CHANNELSIZE] == -1){ //连续RetryCount次为-1才传输-1，否则传输最近一次非-1数据
+            if(++dasDataCounter[i] == dasConfig->dasData.RetryCount.toInt()){
+                dasDataCounter[i] = 0;
+            }else{
+                continue;
+            }
+        }else{
+            dasDataCounter[i] = 0;
+        }
         for(int j = 0; j < oneModule.Channels.size(); j++){
             int32_t channelId = oneModule.Channels[j].Id;
             int32_t channelIndex = i*CHANNELSIZE + channelId-1;
@@ -225,7 +238,10 @@ void Helper::onGetAllpRef_ret(int32_t *data)
                        .arg(data[channelIndex]));
         }
     }
-    mqttOperator->sendData(msg);
+    if(mqttOperator->sendData(msg) == false){
+        mqttOperator->isOnline = false;
+        initMqtt();
+    }
     dataOperator->save(DataOperator::GeneralData, msg);
 }
 

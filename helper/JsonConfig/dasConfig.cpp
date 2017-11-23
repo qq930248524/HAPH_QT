@@ -36,6 +36,7 @@ bool DasConfig::init(QString filepath)
     dasData.UseZigBee   = obj["UseZigBee"].toBool();
     dasData.BaudRate    = obj["BaudRate"].toInt();
     dasData.ZigBeeId    = obj["ZigBeeId"].toString();
+    dasData.EncryptLog   = obj["EncryptLog"].toBool();
     QJsonObject enterObj = obj["Enterprise"].toObject();
     dasData.enterprise.Id = enterObj["Id"].toString();
     dasData.enterprise.DeviceId = enterObj["DeviceId"].toString();

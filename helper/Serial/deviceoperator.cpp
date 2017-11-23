@@ -343,7 +343,6 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
 //    abc:
     usleep(7700);//8ms = 7700us+150us+150us
 
-
 //    while(n--){
 //        if(n%100 == 0){//200us
 //            flag = 1 - flag;
@@ -395,17 +394,14 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
         str.insert(2*i+i-1, " ");
     }
     qDebug() << "[recv]<<" << str;
-    qDebug() << "=================================1";
     qDebug() << "recvLength = "<<recvLength << "   nRegisters=" << nRegisters;
 
     /* 响应数据已经接收完，开始消息处理 */
     if(recvLength != nRegisters*2 + (hostId?6:5))
         return false;
-qDebug() << "=================================2";
     // 检查消息CRC是否正确
     if(usMBCRC16(recvBuffer, recvLength))
         return false;
-qDebug() << "=================================3";
     int msgOffset = 0;
 
     // 检查发送方ID

@@ -11,6 +11,7 @@ contains(DEFINES,ARM){
     LIBS += -L/opt/tslib/lib/ -lts
 }
 
+
 TEMPLATE = app
 TARGET = HAPH
 INCLUDEPATH += .
@@ -37,8 +38,6 @@ HEADERS += mainwindow.h \
            helper/Mqtt/qmqtt_ssl_socket_p.h \
            helper/Mqtt/qmqtt_timer_p.h \
            helper/Mqtt/qmqtt_timerinterface.h \
-           helper/QGauge/qgauge.h \
-           helper/QMeter/qmeter.h \
            helper/Serial/deviceconfiguration.h \
            helper/Serial/deviceoperator.h \
            helper/Serial/deviceregistermap.h \
@@ -56,7 +55,9 @@ HEADERS += mainwindow.h \
     helper/Gpio/gpioset.h \
     helper/Gpio/GPIOSet.h \
     helper/dataControl/datacontrol.h \
-    helper/Data/dataoperator.h
+    helper/Data/dataoperator.h \
+    shownum.h \
+    helper/AES/aes.h
 SOURCES += main.cpp \
            mainwindow.cpp \
            timewidget.cpp \
@@ -72,10 +73,6 @@ SOURCES += main.cpp \
            helper/Mqtt/qmqtt_socket.cpp \
            helper/Mqtt/qmqtt_ssl_socket.cpp \
            helper/Mqtt/qmqtt_timer.cpp \
-           helper/QGauge/qgauge.cpp \
-           helper/QGauge/qgaugedrawfunctions.cpp \
-           helper/QMeter/qmeter.cpp \
-           helper/QMeter/qmeterdrawfunctions.cpp \
            helper/Serial/deviceoperator.cpp \
            helper/Serial/modbuscrc.cpp \
            helper/SwitchButton/switchbutton.cpp \
@@ -88,9 +85,12 @@ SOURCES += main.cpp \
     helper/Mqtt/mqttoperator.cpp \
     helper/watchdog/watchdog.cpp \
     helper/Gpio/GPIOSet.cpp \
-    helper/Data/dataoperator.cpp
+    helper/Data/dataoperator.cpp \
+    shownum.cpp \
+    helper/AES/aes.cpp
 RESOURCES += pic.qrc
 
 FORMS += \
     numpad.ui \
-    setting/tableWidget/zigbeesetting.ui
+    setting/tableWidget/zigbeesetting.ui \
+    shownum.ui

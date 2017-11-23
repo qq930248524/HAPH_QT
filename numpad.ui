@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>574</width>
-    <height>425</height>
+    <width>586</width>
+    <height>455</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -25,10 +25,10 @@
      <x>20</x>
      <y>100</y>
      <width>531</width>
-     <height>311</height>
+     <height>321</height>
     </rect>
    </property>
-   <layout class="QGridLayout" name="gridLayout" rowminimumheight="0,0,0,0" columnminimumwidth="0,0,0">
+   <layout class="QGridLayout" name="gridLayout">
     <property name="sizeConstraint">
      <enum>QLayout::SetNoConstraint</enum>
     </property>
@@ -73,6 +73,9 @@
     </item>
     <item row="0" column="1">
      <widget class="QPushButton" name="pushButton_2">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -161,24 +164,6 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="2">
-     <widget class="QPushButton" name="pushButton_3">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>30</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>3</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="2">
      <widget class="QPushButton" name="pushButton_6">
       <property name="sizePolicy">
@@ -233,6 +218,24 @@
       </property>
      </widget>
     </item>
+    <item row="0" column="2">
+     <widget class="QPushButton" name="pushButton_3">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>30</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>3</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QLineEdit" name="lineEdit">
@@ -266,7 +269,7 @@
     <enum>Qt::NoContextMenu</enum>
    </property>
    <property name="autoFillBackground">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="maxLength">
     <number>10</number>

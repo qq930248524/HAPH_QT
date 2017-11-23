@@ -40,8 +40,9 @@ public:
 
     /*************** UI ****************/
     int32_t modeSize = -1;
-    int *dasDataBuf = NULL;
-    QTimer   *dasTimer = NULL;
+    int *dasDataBuf     = NULL;
+    int *dasDataCounter = NULL;
+    QTimer   *dasTimer  = NULL;
     void getModeData(int modeNum, int32_t *pData);
     void stopRun();
     void gotoRun();    
