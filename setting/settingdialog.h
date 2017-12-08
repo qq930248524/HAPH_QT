@@ -8,6 +8,7 @@
 #include "tableWidget/systemsetting.h"
 #include "tableWidget/collectionsetting.h"
 #include "tableWidget/zigbeesetting.h"
+#include "tableWidget/print.h"
 
 class SettingDialog : public QDialog
 {

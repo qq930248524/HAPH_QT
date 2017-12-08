@@ -3,9 +3,7 @@
 Helper::Helper(QObject *parent) : QObject(parent)
 {
     dasConfig = new DasConfig();
-    if(dasConfig->init("/etc/dasconfig.json") == false){
-        qWarning("detail json error!");
-    }else{
+    if(dasConfig->init("/etc/dasconfig.json") == true){
         modeSize = dasConfig->dasData.enterprise.Modules.size();
         dasDataBuf = new int [modeSize*CHANNELSIZE];
         dasDataCounter = new int[modeSize];
@@ -15,13 +13,15 @@ Helper::Helper(QObject *parent) : QObject(parent)
         for(int i = 0; i < modeSize; i++){
             dasDataCounter[i] = -1;
         }
-    }
 
-    initSerial();
-    initMqtt();
-    initGPIO();
-    initDataControl();
-    gotoRun();//UI run
+        initSerial();
+        initMqtt();
+        initGPIO();
+        initDataControl();
+        gotoRun();//UI run
+    }else{
+        qWarning("das解析失败，后台将不会运行和提供数据!");
+    }
 }
 
 bool Helper::initGPIO()
@@ -43,6 +43,7 @@ bool Helper::initDataControl()
 {
     if(dataOperator == NULL){
         dataOperator = new DataOperator(mqttOperator, dasConfig->dasData.EncryptLog);
+        dataOperator->transmitCfg(dasConfig);
         connect(dataOperator, SIGNAL(needPush(int,QString)),
                 mqttOperator, SLOT(onNeedPush(int,QString)));
     }

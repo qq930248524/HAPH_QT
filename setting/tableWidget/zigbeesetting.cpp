@@ -16,7 +16,6 @@ ZigbeeSetting::ZigbeeSetting(QWidget *parent) :
 
 void ZigbeeSetting::initDev()
 {
-    return;
     if(helper->setting_deviceOperator == NULL){
         helper->setting_deviceOperator = new DeviceOperator(NULL);
     }

@@ -57,7 +57,8 @@ HEADERS += mainwindow.h \
     helper/dataControl/datacontrol.h \
     helper/Data/dataoperator.h \
     shownum.h \
-    helper/AES/aes.h
+    helper/AES/aes.h \
+    setting/tableWidget/print.h
 SOURCES += main.cpp \
            mainwindow.cpp \
            timewidget.cpp \
@@ -87,10 +88,12 @@ SOURCES += main.cpp \
     helper/Gpio/GPIOSet.cpp \
     helper/Data/dataoperator.cpp \
     shownum.cpp \
-    helper/AES/aes.cpp
+    helper/AES/aes.cpp \
+    setting/tableWidget/print.cpp
 RESOURCES += pic.qrc
 
 FORMS += \
     numpad.ui \
     setting/tableWidget/zigbeesetting.ui \
-    shownum.ui
+    shownum.ui \
+    setting/tableWidget/print.ui

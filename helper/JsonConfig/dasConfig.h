@@ -25,7 +25,7 @@ public:
     quint16 Id;
     QString ZigBeeId;
     QVector<Channel> Channels;
-    int getChannelIdByIndex(int index){
+    int getIndexByChannelId(int index){
         for(int i = 0; i < Channels.size(); i++){
             if(Channels[i].Id == index){
                 return i;

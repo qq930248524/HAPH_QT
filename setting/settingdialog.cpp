@@ -31,11 +31,13 @@ SettingDialog::SettingDialog(QWidget *par)
     objArray.append(new CollectionSetting());
     objArray.append(new ZigbeeSetting());
     objArray.append(new SystemSetting());
+    objArray.append(new Print());
     DMSNavigation *navi = new DMSNavigation();
 
     navi->addTab(objArray[0], "数据采集设置");
     navi->addTab(objArray[1], "ZigBee设置");
     navi->addTab(objArray[2], "系统设置");
+    navi->addTab(objArray[3], "系统信息");
     connect(navi, SIGNAL(currentChanged(int)), this, SLOT(changedTO(int)));
 
     navi->setHorizontalAlignment(navi->AlignLeft);

@@ -32,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
     if(helper->checkSerial()){
         startTimer(helper->dasConfig->dasData.QueryDelay.toInt(), Qt::VeryCoarseTimer);
     }
-    helper->dataOperator->test();
+    //helper->dataOperator->test();
 }
 
 void MainWindow::timerEvent(QTimerEvent *event)
@@ -50,7 +50,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
         oneShow->setName(" ");
 
         Channel oneChannel;
-        int channelIndex = oneModule.getChannelIdByIndex(i+1);
+        int channelIndex = oneModule.getIndexByChannelId(i+1);
         if(channelIndex != -1){
             oneChannel = oneModule.Channels[channelIndex];
             oneShow->setName(oneChannel.Name);
