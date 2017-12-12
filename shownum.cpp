@@ -29,3 +29,24 @@ void ShowNum::setValue(double val)
 {
     ui->number->display(val);
 }
+
+/*
+ * par: st 1=on 0=off -1=hidden
+ *
+ */
+void ShowNum::setOn(int st)
+{
+    switch (st) {
+    case 1:
+        ui->onoff->show();
+        ui->onoff->setText("开");
+        break;
+    case 0:
+        ui->onoff->show();
+        ui->onoff->setText("关");
+    case -1:
+        ui->onoff->hide();
+    default:
+        break;
+    }
+}

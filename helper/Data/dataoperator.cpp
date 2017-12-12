@@ -11,7 +11,6 @@
 
 DataOperator::DataOperator()
 {
-
 }
 
 DataOperator::DataOperator(MqttOperator *mqttOperator, bool isEncrypt)
@@ -20,6 +19,10 @@ DataOperator::DataOperator(MqttOperator *mqttOperator, bool isEncrypt)
     initDir();
 }
 
+/*
+ * 1、获取传入的dascfg文件
+ * 2、申请根据cfg申请内存，用于存储每个通道状态
+ */
 void DataOperator::transmitCfg(DasConfig *cfg)
 {
     this->cfg = cfg;
@@ -175,6 +178,7 @@ void DataOperator::createReport(QString payload)
 
 /******************************
  * mqtt链接后，再次push未发送数据 *
+ * 每次都开启一个子线程来操作数据  *
  * ****************************/
 void DataOperator::rePushPendingData()
 {

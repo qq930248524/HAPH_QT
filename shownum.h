@@ -19,6 +19,7 @@ public:
     void setName(QString);
     void setUnit(QString);
     void setValue(double);
+    void setOn(int);
 
 private:
     Ui::ShowNum *ui;

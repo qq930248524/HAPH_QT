@@ -27,7 +27,6 @@ MainWindow::MainWindow(QWidget *parent)
     checkSerial();
     checkMqtt();
 
-
     //3.uiTimer
     if(helper->checkSerial()){
         startTimer(helper->dasConfig->dasData.QueryDelay.toInt(), Qt::VeryCoarseTimer);
@@ -93,6 +92,17 @@ void MainWindow::timerEvent(QTimerEvent *event)
                     oneShow->setValue(Iin);
                 }                
             }
+
+            //set on off label
+            if(oneChannel.ACOrDC == "DC"){
+                oneShow->setOn(-1);
+            }else{
+                if(oneChannel.OutputValueMax*0.05 > Iout){
+                    oneShow->setOn(0);
+                }else{
+                    oneShow->setOn(1);
+                }
+            }
             //qDebug() << "[UI] Iin = "<< Iin << " Iout = " << Iout;
         }
     }
@@ -122,6 +132,7 @@ void MainWindow::showWidget()
     for(int i = 0; i < CHANNELSIZE; i++){
         gridWidget[i] =  new ShowNum(this);
         gridWidget[i]->setFixedSize(150,200);
+        ((ShowNum *)gridWidget[i])->setOn(-1);
     }
 
     gridLayout = new QGridLayout();

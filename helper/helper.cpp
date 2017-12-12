@@ -135,7 +135,7 @@ bool Helper::initMqtt()
     client->setPassword(dasData.Password.toUtf8());
     //        client->setUsername("haph/dev1");
     //        client->setPassword(QString("/NNfooo+0EMPM6M/JINujITl9ADlQKlwvGg8p7ZLSg8=").toUtf8());
-    client->setKeepAlive(10);
+    //client->setKeepAlive(10);
     client->setCleanSession(true);
     client->setClientId(dasData.enterprise.DeviceId);
     client->connectToHost();
@@ -260,6 +260,7 @@ void Helper::onGetAllpRef_time()
 
     if(dasData.UseZigBee){
         for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
+            idArray[1+i] = 0;
             idArray[1+i] |= dasData.enterprise.Modules[i].ZigBeeId.mid(2,2).toInt()<<8;
             idArray[1+i] |= dasData.enterprise.Modules[i].ZigBeeId.mid(4,2).toInt();
         }

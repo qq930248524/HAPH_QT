@@ -15,6 +15,7 @@ public:
     bool isArm;
     static const int N_DEV_BAUDRATE = 11;
     static const int DeviceBaudrateList[N_DEV_BAUDRATE];
+    int32_t *data = NULL;
 
 public:
     DeviceOperator(QSerialPort* port, bool useZigbee = true, int maxID = 1);

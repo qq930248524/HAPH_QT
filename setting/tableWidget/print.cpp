@@ -119,13 +119,13 @@ void Print::on_btnPrint()
                 chanelState = val;
             }
         }else if(isGoOn == false){//跳出时间范围就不在读取内容
-            if(chanelState == false){//如果最后状态为关，则加上剩余时间
-                allTime += itemTime.secsTo(QDateTime(itemTime.date().addDays(1), QTime(0,0,0)));
-            }
             break;
         }
     }//end while
+    if(chanelState == false){//如果最后状态为关，则加上剩余时间
+        allTime += itemTime.secsTo(QDateTime(itemTime.date().addDays(1), QTime(0,0,0)));
+    }
     channelFile.close();
-    ui->log->append(QString("allTime:%1").arg(allTime));
+    ui->log->append(QString("allTime:%1 s").arg(allTime));
 }
 

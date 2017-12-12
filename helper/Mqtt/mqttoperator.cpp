@@ -16,23 +16,24 @@ MqttOperator::MqttOperator(QObject *parent, QMQTT::Client *client, DasData *dasD
 
 void MqttOperator::mqttConnectted()
 {
-    isOnline = true;
-    qDebug("[MQTT] connect mqtt [OK].");
-
     if(client->isConnectedToHost() == true){
-        return;
+        isOnline = true;
+        qDebug("[MQTT] ++ connect mqtt [OK].");
+    }else{
+        isOnline = false;
+        qDebug("[MQTT] +- connect mqtt [failed].");
     }
 }
 void MqttOperator::mqttDisConnectted()
 {
     isOnline = false;
-    qDebug("[MQTT] connect mqtt [FAILD].");
+    qDebug("[MQTT] -- disconnectted mqtt [FAILD].");
 }
 
 void MqttOperator::onNeedPush(int type, QString payload)
 {
     if(client->isConnectedToHost() == false){
-        qDebug() << "[MQTT] [sendData] false. data:" << payload;
+        qDebug() << "[MQTT] [sendData] -- false. data:" << payload;
     }
     switch (type) {
     case GeneralData:
@@ -70,6 +71,8 @@ bool MqttOperator::sendData(QString payLoad)
 
     if(client->isConnectedToHost() == false || isOnline == false){
         qDebug() << "[MQTT] [sendData] false. data:" << dataTopic << payLoad;
+        qDebug() << "inOnline = " << isOnline;
+        qDebug() << "client->isConnectedToHost() = " << client->isConnectedToHost();
         return false;
     }else{
         QMQTT::Message msg(0, dataTopic, payLoad.toLatin1(), qos);

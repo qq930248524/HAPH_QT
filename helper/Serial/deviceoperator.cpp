@@ -180,9 +180,13 @@ void DeviceOperator::onGetAllpRef(int32_t *idArray)
     int32_t devNum = idArray[0]-1;
     int32_t dataSize = devNum * MB_REG_ADCRES_LENGTH;
 
-    int32_t data[dataSize];//reset -1
-    for(int i = 0; i < dataSize; i++){
-        data[i] = -1;
+    static bool isFirst = true;
+    if(isFirst){
+        isFirst = false;
+        data = (int32_t *)malloc(dataSize * sizeof(int32_t));
+        for(int i = 0; i < dataSize; i++){
+            data[i] = -1;
+        }
     }
 
     for(int i = 0; i < devNum; i++){
@@ -216,6 +220,13 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
         port->waitForBytesWritten(500);
         port->flush();
         emit    sendMsg(QByteArray(msgBuffer, msgLen));
+        QString str1 =  QByteArray(msgBuffer, msgLen).toHex().toUpper();
+        int len1 = str1.length()/2;
+        for(int i = 0; i < len1; i++){
+            str1.insert(2*i+i-1, " ");
+        }
+        qDebug() << "[slaveId] = " << addr;
+        qDebug() << "[send]" << str1;
     } else {
         return false;
     }
@@ -240,8 +251,8 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
         for(int i = 0; i < recvLength; i++){
             ret += recvBuffer[i] ^ okRes[i];
         }
-        qDebug() << (ret?"-------------------false":
-                         "-------------------true") ;
+        qDebug() << (ret?"使用zigbee通信，设置目标ID faild":
+                         "使用zigbee通信，设置目标ID ok") ;
         return ret?false:true;
     }
     else    // 没有收到设备的反馈
@@ -341,7 +352,7 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
 //        }
 //    }
 //    abc:
-    usleep(7700);//8ms = 7700us+150us+150us
+    //usleep(7700);//8ms = 7700us+150us+150us
 
 //    while(n--){
 //        if(n%100 == 0){//200us
@@ -351,13 +362,12 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
 //    }
 
     emit    sendMsg(QByteArray(msgBuffer, msgLen));
-
-//    QString str =  QByteArray(msgBuffer, msgLen).toHex().toUpper();
-//    int len = str.length()/2;
-//    for(int i = 0; i < len; i++){
-//        str.insert(2*i+i-1, " ");
-//    }
-//    qDebug() << "[send]>>" << str;
+    QString str1 =  QByteArray(msgBuffer, msgLen).toHex().toUpper();
+    int len1 = str1.length()/2;
+    for(int i = 0; i < len1; i++){
+        str1.insert(2*i+i-1, " ");
+    }
+    qDebug() << "[send]" << str1;
 
     //----------------------------------------启动读取数据
     if(useZigbee == false && isArm){// enable 485 write
@@ -372,8 +382,8 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
     }
 
 
-    port->clear();
-    if(port->waitForReadyRead(250) == false){
+    //port->clear();
+    if(port->waitForReadyRead(500) == false){
         qDebug() << LABEL + "数据read失败 timeout! ";
         return false;
     }
@@ -406,8 +416,8 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
 
     // 检查发送方ID
     if(useZigbee){//use zigbee
-        if(recvBuffer[msgOffset++] != HI_BYTE(hostId) ||
-                recvBuffer[msgOffset++] != LO_BYTE(hostId)){
+        if(recvBuffer[msgOffset++] != HI_BYTE(slaveId) ||
+                recvBuffer[msgOffset++] != LO_BYTE(slaveId)){
             return false;
         }
     }else{
@@ -415,15 +425,15 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
             return false;
         }
     }
-qDebug() << "=================================4";
+
     // 检查发送方反馈功能码
     if(recvBuffer[msgOffset++] != MB_CODE_FUNC_READ_REG)
         return false;
-qDebug() << "=================================5";
+
     // 检查是否收到完整的数据
     if(recvBuffer[msgOffset++] != nRegisters * 2)
         return false;
-qDebug() << "=================================6";
+
     // ok! 收到期待的反馈响应，提取接收到的寄存器值
     for(int regIndex = 0; regIndex < nRegisters; ++regIndex)
     {
