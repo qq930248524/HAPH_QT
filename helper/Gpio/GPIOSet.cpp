@@ -49,12 +49,13 @@ bool GPIOset::initUart()
 
 void GPIOset::run()
 {
+    enum {DOOR=0, ACDC};
     const int dfsSize = 2;
     struct pollfd fds[dfsSize];
-    fds[0].fd = gpio_fd_open(Door, O_RDONLY);
-    fds[0].events = POLLPRI;
-    fds[1].fd = gpio_fd_open(AC_DC, O_RDONLY);
-    fds[1].events = POLLPRI;
+    fds[DOOR].fd = gpio_fd_open(Door, O_RDONLY);
+    fds[DOOR].events = POLLPRI;
+    fds[ACDC].fd = gpio_fd_open(AC_DC, O_RDONLY);
+    fds[ACDC].events = POLLPRI;
 
     while(1){
         qDebug() << LABEL + "start poll!=============================";
@@ -68,14 +69,14 @@ void GPIOset::run()
                  if(lseek(fds[i].fd, 0, SEEK_SET) == -1){}
                  if(read(fds[i].fd, &result, 1) == -1){}
                  switch (i) {
-                 case 0:
+                 case DOOR:
                      isDoor = (result == '1');
                      qDebug()<<LABEL + " --------------- Door is " + result;
                      emit door(isDoor);
                      break;
-                 case 1:
+                 case ACDC:
                      isDcAc = (result == '1');
-                     qDebug()<<LABEL + "DC_AC is " + isDcAc;
+                     qDebug()<<LABEL + "DC_AC is " + result;
                      emit dcac(isDcAc);
                      break;
                  default:
@@ -84,9 +85,15 @@ void GPIOset::run()
             }
         }
         if(isDoor || isDcAc){
-            //gpio_set_value(Beeper, 1);
+            gpio_set_value(Beeper, 1);
             qDebug() << LABEL + "[Beaper] ========= beaper = 1 ";
         }else{
+            gpio_set_value(Beeper, 0);
+            qDebug() << LABEL + "[Beaper] ========= beaper = 0 ";
+        }
+
+        if(isDcAc){//掉电后，beep 10s
+            sleep(10);
             gpio_set_value(Beeper, 0);
         }
     }

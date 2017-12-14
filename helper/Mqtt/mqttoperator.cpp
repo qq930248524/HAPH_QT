@@ -10,24 +10,35 @@ MqttOperator::MqttOperator(QObject *parent) : QObject(parent)
 MqttOperator::MqttOperator(QObject *parent, QMQTT::Client *client, DasData *dasData)
     :client(client),dasData(dasData)
 {
-    connect(client, SIGNAL(connected()),    this, SLOT(mqttConnectted()));
-    connect(client, SIGNAL(disconnected()), this, SLOT(mqttDisConnectted()));
+    client->setKeepAlive(aliave);
+    connect(client, SIGNAL(pingresp()), this, SLOT(onPingresp()));
 }
 
-void MqttOperator::mqttConnectted()
+void MqttOperator::onPingresp()
 {
-    if(client->isConnectedToHost() == true){
-        isOnline = true;
-        qDebug("[MQTT] ++ connect mqtt [OK].");
-    }else{
-        isOnline = false;
-        qDebug("[MQTT] +- connect mqtt [failed].");
+    if(dog == NULL){
+        dog = new QTimer();
+        dog->setInterval(aliave * 1000 * 2);
+        connect(dog, SIGNAL(timeout()), this, SLOT(checkDog()));
+        dog->start();
     }
+    isOnline = true;
 }
-void MqttOperator::mqttDisConnectted()
+
+//只判断离线
+void MqttOperator::checkDog()
 {
+    static bool first = true;
+
+    if(isOnline){
+        first = true;
+    }else{
+        if(first){
+            client->disconnectFromHost();
+        }
+        first = false;
+    }
     isOnline = false;
-    qDebug("[MQTT] -- disconnectted mqtt [FAILD].");
 }
 
 void MqttOperator::onNeedPush(int type, QString payload)
@@ -69,12 +80,14 @@ bool MqttOperator::sendData(QString payLoad)
             .arg(dasData->enterprise.Id)
             .arg(dasData->enterprise.SerialNo);
 
-    if(client->isConnectedToHost() == false || isOnline == false){
+    if(client->isConnectedToHost() == false ){
+        isOnline = false;
         qDebug() << "[MQTT] [sendData] false. data:" << dataTopic << payLoad;
         qDebug() << "inOnline = " << isOnline;
         qDebug() << "client->isConnectedToHost() = " << client->isConnectedToHost();
         return false;
     }else{
+        isOnline = true;
         QMQTT::Message msg(0, dataTopic, payLoad.toLatin1(), qos);
         int abc = client->publish(msg);
         qDebug() << "[MQTT] [sendData]: " << dataTopic << payLoad;
@@ -85,6 +98,7 @@ bool MqttOperator::sendData(QString payLoad)
 bool MqttOperator::sendPower(bool isDC, QString payLoad)
 {
     if(client->isConnectedToHost() == false){
+        isOnline = false;
         qDebug() << "[MQTT] [sendNotify] false. dc is" << isDC;
         return false;
     }
@@ -112,6 +126,7 @@ bool MqttOperator::sendPower(bool isDC, QString payLoad)
 bool MqttOperator::sendDoor(bool isOpen, QString payload)
 {
     if(client->isConnectedToHost() == false){
+        isOnline = false;
         qDebug() << "[MQTT] [sendNotify] false. door is" << isOpen;
         return false;
     }
@@ -141,6 +156,7 @@ bool MqttOperator::sendDoor(bool isOpen, QString payload)
 bool MqttOperator::sendSensor(bool isOn, QString payload)
 {
     if(client->isConnectedToHost() == false){
+        isOnline = false;
         qDebug() << "[MQTT] [sendNotify] false. ";
         return false;
     }

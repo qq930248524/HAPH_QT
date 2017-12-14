@@ -232,7 +232,7 @@ void Helper::onGetAllpRef_ret(int32_t *data)
             int32_t channelId = oneModule.Channels[j].Id;
             int32_t channelIndex = i*CHANNELSIZE + channelId-1;
             dasDataBuf[channelIndex] = data[channelIndex];
-            msg.append(QString(", %1-%2-%3:%4")
+            msg.append(QString(",%1-%2-%3:%4")
                        .arg(dasConfig->dasData.ZigBeeId.mid(2,4))
                        .arg(oneModule.Id)
                        .arg(channelId)
@@ -285,6 +285,6 @@ void Helper::sendDoor(bool isOn)
 void Helper::sendPower(bool isOn)
 {
     QString msg = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
-    mqttOperator->sendDoor(isOn, msg);
+    mqttOperator->sendPower(isOn, msg);
     dataOperator->save(isOn?(DataOperator::PowerOn):(DataOperator::PowerOff), msg);
 }

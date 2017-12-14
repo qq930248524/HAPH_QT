@@ -8,7 +8,7 @@
 
 #include "qmqtt.h"
 #include "helper/JsonConfig/dasConfig.h"
-//#include "helper/Data/dataoperator.h"
+#include <QTimer>
 
 #include <QObject>
 
@@ -21,15 +21,17 @@ public:
     MqttOperator(QObject *parent = 0, QMQTT::Client *client = NULL,  DasData *dasData = NULL);
 
     bool isOnline = false;
+    const int aliave = 10;
 
     QMQTT::Client *client = NULL;
     DasData *dasData;
+    QTimer *dog = NULL;
 signals:
 
 public slots:
-    void mqttConnectted();
-    void mqttDisConnectted();
     void onNeedPush(int, QString);
+    void onPingresp();
+    void checkDog();
     bool sendData(QString );
     bool sendPower(bool isDC, QString payload);
     bool sendDoor(bool isOpen, QString payload);

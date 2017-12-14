@@ -24,12 +24,13 @@ void Print::initUI()
     ui->modNum->clear();
     foreach (Module oneModule, helper->dasConfig->dasData.enterprise.Modules) {
         ui->modNum->addItem(QString("%1").arg(oneModule.Id));
-    }
-    ui->modNum->setCurrentIndex(0);
+    }    
 
     connect(ui->modNum, SIGNAL(activated(int)), this, SLOT(on_comMode(int)));
     connect(ui->channelNum, SIGNAL(activated(int)), this, SLOT(on_comChannel(int)));
     connect(ui->pushButton, SIGNAL(clicked(bool)), this, SLOT(on_btnPrint()));
+
+    ui->modNum->setCurrentIndex(0);
 }
 
 void Print::on_comMode(int index)
@@ -39,23 +40,25 @@ void Print::on_comMode(int index)
     foreach (Channel oneChannel, oneModule.Channels) {
         ui->channelNum->addItem(QString("%1").arg(oneChannel.Id));
     }
-    ui->channelNum->setCurrentIndex(0);
+
     ui->log->clear();
     ui->log->append(QString("模块 ID: %1").arg(oneModule.Id));
     ui->log->append(QString("模块 ZigbeeId: %1").arg(oneModule.ZigBeeId));
+
+    ui->channelNum->setCurrentIndex(0);
 }
 
 void Print::on_comChannel(int index)
 {
     Channel oneChannel = helper->dasConfig->dasData.enterprise.Modules[ui->modNum->currentIndex()].Channels[index];
     ui->log->append(QString("通道 ID: %1").arg(oneChannel.Id));
-    ui->log->append(QString(" NAME: %1").arg(oneChannel.Name));
-    ui->log->append(QString(" InputValueMin: %1").arg(oneChannel.InputValueMin));
-    ui->log->append(QString(" InputValueMax: %1").arg(oneChannel.InputValueMax));
-    ui->log->append(QString(" OutputValueMin: %1").arg(oneChannel.OutputValueMin));
-    ui->log->append(QString(" OutputValueMax: %1").arg(oneChannel.OutputValueMax));
-    ui->log->append(QString(" ACOrDC: %1").arg(oneChannel.ACOrDC));
-    ui->log->append(QString(" DataUnit: %1").arg(oneChannel.DataUnit));
+    ui->log->append(QString("    NAME: %1").arg(oneChannel.Name));
+    ui->log->append(QString("    InputValueMin: %1").arg(oneChannel.InputValueMin));
+    ui->log->append(QString("    InputValueMax: %1").arg(oneChannel.InputValueMax));
+    ui->log->append(QString("    OutputValueMin: %1").arg(oneChannel.OutputValueMin));
+    ui->log->append(QString("    OutputValueMax: %1").arg(oneChannel.OutputValueMax));
+    ui->log->append(QString("    ACOrDC: %1").arg(oneChannel.ACOrDC));
+    ui->log->append(QString("    DataUnit: %1").arg(oneChannel.DataUnit));
 }
 
 // 打印DC报表

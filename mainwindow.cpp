@@ -46,17 +46,20 @@ void MainWindow::timerEvent(QTimerEvent *event)
     for(int i = 0; i< CHANNELSIZE; i++){
         ShowNum *oneShow = (ShowNum *)gridWidget[i];
         oneShow->setTitle(QString("%1-%2").arg(modeNum+1).arg(i+1));
-        oneShow->setName(" ");
+        oneShow->setName("-- ");
+        oneShow->setUnit("-");
 
         Channel oneChannel;
         int channelIndex = oneModule.getIndexByChannelId(i+1);
-        if(channelIndex != -1){
+        if(channelIndex != -1){//找到了通道
             oneChannel = oneModule.Channels[channelIndex];
             oneShow->setName(oneChannel.Name);
             oneShow->setUnit(oneChannel.DataUnit);
         }
+
         if(modeData[modeNum*CHANNELSIZE+i] == -1 || channelIndex == -1){
             oneShow->setValue(-1);
+            oneShow->setOn(-1);
         }else{            
             //数据采集器采样原始电流换算公式如下： //量程为输入量程
             //  1、DC（0~20mA）：数据采集器采用通道上传数据为DC_Data，
@@ -88,9 +91,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
             if(isOriginal == false){
                 oneShow->setValue(Iout);
             }else{
-                if(isOriginal == false){
-                    oneShow->setValue(Iin);
-                }                
+                oneShow->setValue(Iin);
             }
 
             //set on off label
@@ -261,12 +262,11 @@ void MainWindow::switchFullScreen()
 
 void MainWindow::checkInternet()
 {
-    if(networkManager == NULL){
-        networkManager = new QNetworkConfigurationManager();
-        connect(networkManager, SIGNAL(onlineStateChanged(bool)),
-                this, SLOT(networkStatusChanges(bool)));
-    }
-    if(networkManager->isOnline() == true){
+
+    connect(&networkManager, SIGNAL(onlineStateChanged(bool)),
+                    this, SLOT(networkStatusChanges(bool)));
+
+    if(networkManager.isOnline() == true){
         btn_internet->setStyleSheet(onStr);
         log->append("[internet] online!");
         qDebug() << "[internet] online";

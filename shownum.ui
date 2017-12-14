@@ -181,7 +181,7 @@
           <string notr="true">color:rgb(12, 255, 0)</string>
          </property>
          <property name="text">
-          <string>单位</string>
+          <string>-</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -201,7 +201,7 @@
         <string notr="true">color:rgb(142, 176, 148)</string>
        </property>
        <property name="text">
-        <string>通道名称</string>
+        <string>--  </string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
