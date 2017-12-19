@@ -40,7 +40,7 @@ public:
 
     /*************** UI ****************/
     int32_t modeSize = -1;
-    int *dasDataBuf     = NULL;
+    int *dasDataBuf     = NULL;// helper的数据缓存
     int *dasDataCounter = NULL;
     QTimer   *dasTimer  = NULL;
     void getModeData(int modeNum, int32_t *pData);
@@ -50,8 +50,8 @@ public:
 signals:
 
 public slots:
-    void onGetAllpRef_ret(int32_t *);
-    void onGetAllpRef_time();
+    void onGetAllpRef_ret(int32_t *);//获取串口返回的数据，更新dasDataBuf+保存+发送
+    void onGetAllpRef_time();//定时器主动发送获取数据的请求
     void sendDoor(bool);
     void sendPower(bool);
 };

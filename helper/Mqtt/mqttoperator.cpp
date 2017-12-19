@@ -23,22 +23,24 @@ void MqttOperator::onPingresp()
         dog->start();
     }
     isOnline = true;
+    isOnline2 = true;
 }
 
 //只判断离线
 void MqttOperator::checkDog()
 {
     static bool first = true;
-
-    if(isOnline){
+    if(isOnline2){
         first = true;
+        isOnline = true;
+        isOnline2 = false;
     }else{
         if(first){
             client->disconnectFromHost();
+            first = false;
         }
-        first = false;
+        isOnline = false;
     }
-    isOnline = false;
 }
 
 void MqttOperator::onNeedPush(int type, QString payload)
@@ -80,14 +82,12 @@ bool MqttOperator::sendData(QString payLoad)
             .arg(dasData->enterprise.Id)
             .arg(dasData->enterprise.SerialNo);
 
-    if(client->isConnectedToHost() == false ){
-        isOnline = false;
+    if(isOnline == false){
         qDebug() << "[MQTT] [sendData] false. data:" << dataTopic << payLoad;
-        qDebug() << "inOnline = " << isOnline;
-        qDebug() << "client->isConnectedToHost() = " << client->isConnectedToHost();
+//        qDebug() << "inOnline = " << isOnline;
+//        qDebug() << "client->isConnectedToHost() = " << client->isConnectedToHost();
         return false;
     }else{
-        isOnline = true;
         QMQTT::Message msg(0, dataTopic, payLoad.toLatin1(), qos);
         int abc = client->publish(msg);
         qDebug() << "[MQTT] [sendData]: " << dataTopic << payLoad;
@@ -106,11 +106,11 @@ bool MqttOperator::sendPower(bool isDC, QString payLoad)
     int qos = 1;
     QString notifyTopic;
     if(isDC){
-        notifyTopic = QString("haph/cep/notify/poweron/%1/%2")
+        notifyTopic = QString("haph/cep/notify/poweroff/%1/%2")
                 .arg(dasData->enterprise.Id)
                 .arg(dasData->enterprise.SerialNo);
     }else{
-        notifyTopic = QString("haph/cep/notify/poweroff/%1/%2")
+        notifyTopic = QString("haph/cep/notify/poweron/%1/%2")
                 .arg(dasData->enterprise.Id)
                 .arg(dasData->enterprise.SerialNo);
     }

@@ -166,7 +166,8 @@ bool Helper::checkMqtt()
 {
     if(mqttOperator == NULL
             || mqttOperator->client == NULL
-            || mqttOperator->client->isConnectedToHost()==false)
+            || mqttOperator->isOnline ==false)
+
         return false;
     else
         return true;
@@ -211,34 +212,42 @@ void Helper::getModeData(int modeNum, int32_t *pData)//ui slot
 }
 
 /********************** SLOT deviceOpt *********************/
+/*******************
+ * 收取到串口数据
+ * 1/次数判断，三次错误不上传
+ * 2/发送判断后的数据
+ *
+ * **********************/
 void Helper::onGetAllpRef_ret(int32_t *data)
 {
     QString msg = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
 
     int32_t devNum = dasConfig->dasData.enterprise.Modules.size();
 
-    for(int i = 0; i < devNum; i++){
+    for(int i = 0; i < devNum; i++){//遍历模块
         Module oneModule = dasConfig->dasData.enterprise.Modules[i];
-        if(data[i*CHANNELSIZE] == -1){ //连续RetryCount次为-1才传输-1，否则传输最近一次非-1数据
-            if(++dasDataCounter[i] == dasConfig->dasData.RetryCount.toInt()){
+        int firstChanChar = i*CHANNELSIZE + oneModule.Channels[0].Id - 1;//配置中i模块的第一个配置通道的字节数
+        if(data[firstChanChar] == -1){ //连续RetryCount次为-1才传输-1，否则传输最近一次非-1数据
+            if(++dasDataCounter[i] == dasConfig->dasData.RetryCount.toInt()){//次数用尽
                 dasDataCounter[i] = 0;
-            }else{
-                continue;
+                 memcpy(&dasDataBuf[i*CHANNELSIZE], &data[i*CHANNELSIZE], sizeof(int32_t)*CHANNELSIZE);
             }
-        }else{
+        }else{//工作正常
             dasDataCounter[i] = 0;
+            memcpy(&dasDataBuf[i*CHANNELSIZE], &data[i*CHANNELSIZE], sizeof(int32_t)*CHANNELSIZE);
         }
-        for(int j = 0; j < oneModule.Channels.size(); j++){
+
+        for(int j = 0; j < oneModule.Channels.size(); j++){//便利通道
             int32_t channelId = oneModule.Channels[j].Id;
             int32_t channelIndex = i*CHANNELSIZE + channelId-1;
-            dasDataBuf[channelIndex] = data[channelIndex];
+
             msg.append(QString(",%1-%2-%3:%4")
-                       .arg(dasConfig->dasData.ZigBeeId.mid(2,4))
-                       .arg(oneModule.Id)
-                       .arg(channelId)
-                       .arg(data[channelIndex]));
-        }
-    }
+                       .arg(dasConfig->dasData.enterprise.DeviceId)
+                       .arg(oneModule.Id, 2, 10, QChar('0'))
+                       .arg(channelId, 2, 10, QChar('0'))
+                       .arg(dasDataBuf[channelIndex]));
+        }//over 通道
+    }//over 模块
     if(mqttOperator->sendData(msg) == false){
         mqttOperator->isOnline = false;
         initMqtt();
@@ -269,7 +278,7 @@ void Helper::onGetAllpRef_time()
             idArray[1+i] = dasData.enterprise.Modules[i].Id;
         }
     }
-//TODO
+
     deviceOperator->onGetAllpRef(idArray);
 }
 

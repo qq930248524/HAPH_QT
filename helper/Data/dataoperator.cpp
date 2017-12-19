@@ -67,7 +67,6 @@ void DataOperator::save(MsgType type, QString payload)
         len = strlen(p_con)+1;
     }
     p_con = data;
-    qDebug() << "----------------------------------- len = " << len;
 
     //保存到local
     QString locDir = dataLocaDir + "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd");
@@ -138,6 +137,7 @@ void DataOperator::createReport(QString payload)
         //获取通道、模块的索引
         int moduleIndex = cfg->getModeNumByDevid(moduleId);
         int channelIndex = modules[moduleIndex].getIndexByChannelId(channelId);
+
         if(modules[moduleIndex].Channels[channelIndex].ACOrDC == "DC"){
             continue;
         }
@@ -182,21 +182,27 @@ void DataOperator::createReport(QString payload)
  * ****************************/
 void DataOperator::rePushPendingData()
 {
+    qDebug()<< "================== rePushPendingData()";
     if(!this->isRunning() && QDir(dataPendDir).entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot).size() > 0){
+        qDebug()<< "================== rePushPendingData() -> start()";
         this->start();
     }
 }
 
 void DataOperator::run()
 {
+    qDebug()<< "================== run()";
     if(this->mqttOperator->isOnline == false){
+        qDebug()<< "================== return....";
         return;
     }
 
+    qDebug()<< "================== run(1)";
     QFileInfoList dirList = QDir(dataPendDir).entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot, QDir::Name|QDir::Reversed);
     foreach (QFileInfo oneDir, dirList) {
         QFileInfoList fileList = QDir(oneDir.absoluteFilePath()).entryInfoList(QDir::Files|QDir::NoDotAndDotDot, QDir::Name|QDir::Reversed);
         foreach (QFileInfo oneFile, fileList) {
+            qDebug()<< "================== fileName:" << oneFile.baseName();
             FILE *fr = fopen(oneFile.absoluteFilePath().toLatin1().data(), "r+b");
             char c_data[512] = {0};
             int len = 0;

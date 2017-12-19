@@ -225,8 +225,8 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
         for(int i = 0; i < len1; i++){
             str1.insert(2*i+i-1, " ");
         }
-        qDebug() << "[slaveId] = " << addr;
-        qDebug() << "[send]" << str1;
+//        qDebug() << "[slaveId] = " << addr;
+//        qDebug() << "[send]" << str1;
     } else {
         return false;
     }
@@ -257,7 +257,7 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
     }
     else    // 没有收到设备的反馈
     {
-        qDebug("[serial] read data timeout!");
+//        qDebug("[serial] read data timeout!");
         return false;
     }
 }
@@ -294,12 +294,17 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
     if(!pRegs)
         return false;
 
-    if(!port->isOpen())
+    if(!port->isOpen()){
+        for(int i = 0; i < 12; pRegs[i++] = -1);
         return false;
+    }
+
 
     if(useZigbee){//232
-        if(!setNetAddress(slaveId))
+        if(!setNetAddress(slaveId)){
+            for(int i = 0; i < 12; pRegs[i++] = -1);
             return false;
+        }
     }
     char msgBuffer[32] = {};
     int  msgLen = 0;
@@ -337,6 +342,7 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
 
     if(port->write(msgBuffer, msgLen) == -1){
         qDebug() << LABEL + "数据发送失败";
+        for(int i = 0; i < 12; pRegs[i++] = -1);
         return false;
     }
 
@@ -377,6 +383,7 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
             GPIOset::gpio_set_value(UART4, UART_READ);
         }else{
             qDebug()<< LABEL + "error 没有找到对应串口";
+            for(int i = 0; i < 12; pRegs[i++] = -1);
             return false;
         }
     }
@@ -385,6 +392,7 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
     //port->clear();
     if(port->waitForReadyRead(500) == false){
         qDebug() << LABEL + "数据read失败 timeout! ";
+        for(int i = 0; i < 12; pRegs[i++] = -1);
         return false;
     }
 
@@ -407,32 +415,42 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
     qDebug() << "recvLength = "<<recvLength << "   nRegisters=" << nRegisters;
 
     /* 响应数据已经接收完，开始消息处理 */
-    if(recvLength != nRegisters*2 + (hostId?6:5))
+    if(recvLength != nRegisters*2 + (hostId?6:5)){
+        for(int i = 0; i < 12; pRegs[i++] = -1);
         return false;
+    }
     // 检查消息CRC是否正确
-    if(usMBCRC16(recvBuffer, recvLength))
+    if(usMBCRC16(recvBuffer, recvLength)){
+        for(int i = 0; i < 12; pRegs[i++] = -1);
         return false;
+    }
     int msgOffset = 0;
 
     // 检查发送方ID
     if(useZigbee){//use zigbee
         if(recvBuffer[msgOffset++] != HI_BYTE(slaveId) ||
                 recvBuffer[msgOffset++] != LO_BYTE(slaveId)){
+            for(int i = 0; i < 12; pRegs[i++] = -1);
             return false;
         }
     }else{
         if(recvBuffer[msgOffset++] != slaveId){
+            for(int i = 0; i < 12; pRegs[i++] = -1);
             return false;
         }
     }
 
     // 检查发送方反馈功能码
-    if(recvBuffer[msgOffset++] != MB_CODE_FUNC_READ_REG)
+    if(recvBuffer[msgOffset++] != MB_CODE_FUNC_READ_REG){
+        for(int i = 0; i < 12; pRegs[i++] = -1);
         return false;
+    }
 
     // 检查是否收到完整的数据
-    if(recvBuffer[msgOffset++] != nRegisters * 2)
+    if(recvBuffer[msgOffset++] != nRegisters * 2){
+        for(int i = 0; i < 12; pRegs[i++] = -1);
         return false;
+    }
 
     // ok! 收到期待的反馈响应，提取接收到的寄存器值
     for(int regIndex = 0; regIndex < nRegisters; ++regIndex)

@@ -21,6 +21,7 @@ public:
     MqttOperator(QObject *parent = 0, QMQTT::Client *client = NULL,  DasData *dasData = NULL);
 
     bool isOnline = false;
+    bool isOnline2 = false;
     const int aliave = 10;
 
     QMQTT::Client *client = NULL;
