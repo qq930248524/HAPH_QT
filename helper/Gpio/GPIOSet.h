@@ -48,6 +48,10 @@ public:
     bool isDcAc = false;
     bool initUart();
 
+    QTimer *beeper;
+    enum TYPE{DOOR=0, ACDC, NON};
+    enum TYPE type;
+
     /*****************************************/
     /* gpio export */
     int gpio_export(unsigned int gpio);
@@ -68,8 +72,11 @@ public:
     /*// Callback called when SIGINT is sent to the process (Ctrl-C)
     void signal_handler(int sig);*/
 
-
+public slots:
+    void on_beep();
+    void on_beepSwitch(bool);
 signals:
+    void beepSwitch(bool);
     void door(bool isOpen);
     void dcac(bool isDc);
 

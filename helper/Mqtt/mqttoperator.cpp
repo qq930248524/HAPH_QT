@@ -14,11 +14,20 @@ MqttOperator::MqttOperator(QObject *parent, QMQTT::Client *client, DasData *dasD
     connect(client, SIGNAL(pingresp()), this, SLOT(onPingresp()));
 }
 
+
+/**************************************************
+ * @brief:
+ *      没次获取到心跳，执行一次此函数
+ *      isOnline：记录MQTT模块是否在线的标志
+ *      isOnline2：用来临时判断isOnline状态的标志，局部使用
+ * @param：
+ * @return:
+ **************************************************/
 void MqttOperator::onPingresp()
 {
-    if(dog == NULL){
+    if(dog == NULL){//初始化定时器dog，用来判断mqtt是否在线
         dog = new QTimer();
-        dog->setInterval(aliave * 1000 * 2);
+        dog->setInterval(aliave * 1000);
         connect(dog, SIGNAL(timeout()), this, SLOT(checkDog()));
         dog->start();
     }
@@ -26,7 +35,15 @@ void MqttOperator::onPingresp()
     isOnline2 = true;
 }
 
-//只判断离线
+
+/**************************************************
+ * @brief:
+ *      定时器dog的槽函数，用来判断一个时间段内isOnline2是否被心跳置为true
+ *      如果isOnline2被置为true，则isOnline=true
+ *      如果isOnline2没有置true，则isOnline=false
+ * @param：
+ * @return:
+ **************************************************/
 void MqttOperator::checkDog()
 {
     static bool first = true;
@@ -43,6 +60,13 @@ void MqttOperator::checkDog()
     }
 }
 
+
+/**************************************************
+ * @brief:  用来响应数据（Data）操作needPush的槽函数。
+ *          当mqtt链接时，data模块的续传功能（子线程）启动，检测到有需要续传的数据后，会发送needPush信号
+ * @param：type：消息的类型，payload：负载
+ * @return: void
+ **************************************************/
 void MqttOperator::onNeedPush(int type, QString payload)
 {
     if(client->isConnectedToHost() == false){
@@ -75,6 +99,11 @@ void MqttOperator::onNeedPush(int type, QString payload)
     }
 }
 
+/**************************************************
+ * @brief:  发送数据
+ * @param：payload是负载
+ * @return: true=发送成功，false=发送失败
+ **************************************************/
 bool MqttOperator::sendData(QString payLoad)
 {
     int qos = 1;
@@ -95,6 +124,12 @@ bool MqttOperator::sendData(QString payLoad)
     }
 }
 
+
+/**************************************************
+ * @brief:  发送电源状态
+ * @param：isDC是否为直流，payload是负载
+ * @return: true=发送成功，false=发送失败
+ **************************************************/
 bool MqttOperator::sendPower(bool isDC, QString payLoad)
 {
     if(client->isConnectedToHost() == false){
@@ -123,6 +158,11 @@ bool MqttOperator::sendPower(bool isDC, QString payLoad)
     return true;
 }
 
+/**************************************************
+ * @brief:  发送门的状态
+ * @param：  isOpen：开或关， payload：负载
+ * @return: true=发送成功，  false=发送失败
+ **************************************************/
 bool MqttOperator::sendDoor(bool isOpen, QString payload)
 {
     if(client->isConnectedToHost() == false){
@@ -153,6 +193,11 @@ bool MqttOperator::sendDoor(bool isOpen, QString payload)
     return true;
 }
 
+/**************************************************
+ * @brief:  发送传感器的状态
+ * @param：  isOn：开或关， payload：负载
+ * @return: true=发送成功，  false=发送失败
+ **************************************************/
 bool MqttOperator::sendSensor(bool isOn, QString payload)
 {
     if(client->isConnectedToHost() == false){

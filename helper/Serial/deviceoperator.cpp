@@ -175,6 +175,17 @@ void DeviceOperator::getDeviceADCRes(int slaveId)
 }
 
 //获取数组中所有设备通道数据
+/**************************************************
+ * @brief:  1/使用Serial模块的缓存data来做一级缓存，
+ *          2/调用readDevRegister函数来获取一个模块的数据，到data
+ *          3/异步使用信号getAllpRef(data)，来发送缓存数据。（注意：这里是异步）
+ * @param：idArray：设备数组，数组结构如下
+ *      ————————————————————————————————————————————————————————
+ *      |    |0      |1      |2      |3      |4      |n        |
+ *      |    len     slaveId slaveId slaveId slaveId slaveId   |
+ *      ————————————————————————————————————————————————————————
+ * @return:
+ **************************************************/
 void DeviceOperator::onGetAllpRef(int32_t *idArray)
 {
     int32_t devNum = idArray[0]-1;
@@ -243,7 +254,6 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
         }
         while(port->waitForReadyRead(50));
         emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
-        qDebug("----------------------------");
         /* 响应数据已经接收完，开始消息处理 */
         uint8_t okRes[] = {0xDE, 0xDF, 0xEF, 0xD2, 0x00};
 
@@ -251,8 +261,8 @@ bool DeviceOperator::setNetAddress(uint16_t addr)
         for(int i = 0; i < recvLength; i++){
             ret += recvBuffer[i] ^ okRes[i];
         }
-        qDebug() << (ret?"使用zigbee通信，设置目标ID faild":
-                         "使用zigbee通信，设置目标ID ok") ;
+//        qDebug() << (ret?"使用zigbee通信，设置目标ID faild":
+//                         "使用zigbee通信，设置目标ID ok") ;
         return ret?false:true;
     }
     else    // 没有收到设备的反馈
@@ -288,6 +298,18 @@ void delayUS(int time)
  *  ttyS4  485 modbus  need control GPIO0_13
  * ****************************************************/
 //获取采集器数据
+/**************************************************
+ * @brief:  读取slaveId模块的数据到pRegs，如果读取错误，则将pRegs置-1
+ *          根据useZigbee，判断通信方式，（modebus/zigbee）
+ *          modebus：slaveId当做moduleID使用，不需要通信前的设置采集器的目标ID，并且通信协议的前1字符为目标moduleID
+ *          zigbee： slaveId当做zigbeeID使用，需要在通信前设置采集器的目标ID，并且通信协议的前2字符为本地zigbeeID
+ * @param：
+ *      pRegs：用来存取数据的buf，大小为12个int32_t
+ *      slaveId:模块的ID，zigbeeID/moduleID
+ *      startreg：采集器开始的寄存器地址，该不同功能对应不同地址
+ *      nRegisters：需要读取的采集器的寄存器数量
+ * @return: true=ok false=failed
+ **************************************************/
 bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
                                      uint16_t startreg, uint16_t nRegisters)
 {
@@ -373,7 +395,7 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
     for(int i = 0; i < len1; i++){
         str1.insert(2*i+i-1, " ");
     }
-    qDebug() << "[send]" << str1;
+    //qDebug() << "[send]" << str1;
 
     //----------------------------------------启动读取数据
     if(useZigbee == false && isArm){// enable 485 write
@@ -411,8 +433,8 @@ bool DeviceOperator::readDevRegister(int32_t* pRegs, int slaveId,
     for(int i = 0; i < len; i++){
         str.insert(2*i+i-1, " ");
     }
-    qDebug() << "[recv]<<" << str;
-    qDebug() << "recvLength = "<<recvLength << "   nRegisters=" << nRegisters;
+//    qDebug() << "[recv]<<" << str;
+//    qDebug() << "recvLength = "<<recvLength << "   nRegisters=" << nRegisters;
 
     /* 响应数据已经接收完，开始消息处理 */
     if(recvLength != nRegisters*2 + (hostId?6:5)){

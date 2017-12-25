@@ -10,13 +10,28 @@
 #include <sys/epoll.h>
 
 #include <QFileInfo>
+#include <QTimer>
 #include <QDebug>
 
+/**************************************************
+ * @brief:  构造函数，初始化beeper定时器，链接槽函数，调用initUart
+ * @param：
+ * @return:
+ **************************************************/
 GPIOset::GPIOset()
 {
+    beeper = new QTimer();
+    beeper->setInterval(1000);
+    connect(beeper, SIGNAL(timeout()), this, SLOT(on_beep()));
+    connect(this, SIGNAL(beepSwitch(bool)), this, SLOT(on_beepSwitch(bool)));
     initUart();
 }
 
+/**************************************************
+ * @brief:  初始化所有用到的gpio
+ * @param：
+ * @return:
+ **************************************************/
 bool GPIOset::initUart()
 {
 #ifndef ARM
@@ -43,13 +58,11 @@ bool GPIOset::initUart()
     gpio_set_value(UART4, UART_READ);
 
     return true;
-
 }
 
 
 void GPIOset::run()
 {
-    enum {DOOR=0, ACDC};
     const int dfsSize = 2;
     struct pollfd fds[dfsSize];
     fds[DOOR].fd = gpio_fd_open(Door, O_RDONLY);
@@ -76,7 +89,7 @@ void GPIOset::run()
                      break;
                  case ACDC:
                      isDcAc = (result == '1');
-                     qDebug()<<LABEL + "DC_AC is " + result;
+                     qDebug()<<LABEL + "----------------DC_AC is " + result;
                      emit dcac(isDcAc);
                      break;
                  default:
@@ -84,18 +97,56 @@ void GPIOset::run()
                  }
             }
         }
-        if(isDoor || isDcAc){
-            gpio_set_value(Beeper, 1);
-            qDebug() << LABEL + "[Beaper] ========= beaper = 1 ";
+
+        if(isDoor){
+            type = DOOR;
+        }else if(isDcAc){
+            type = ACDC;
         }else{
-            gpio_set_value(Beeper, 0);
-            qDebug() << LABEL + "[Beaper] ========= beaper = 0 ";
+            type = NON;
         }
 
-        if(isDcAc){//掉电后，beep 10s
-            sleep(10);
-            gpio_set_value(Beeper, 0);
+        if(isDoor || isDcAc){
+            emit beepSwitch(true);
+        }else{
+            emit beepSwitch(false);
         }
+    }
+}
+
+void GPIOset::on_beep()
+{
+    static int num = 0;
+    switch (type) {
+    case DOOR:
+        if(num++ == 4){
+            num = 0;
+        }
+        break;
+    case ACDC:
+        if(num++ == 6){
+            num = 0;
+        }
+        break;
+    default:
+        break;
+    }
+
+    if(num){
+        gpio_set_value(Beeper, 0);
+    }else{
+        gpio_set_value(Beeper, 1);
+    }
+}
+
+void GPIOset::on_beepSwitch(bool isOn)
+{
+    if(isOn){
+        gpio_set_value(Beeper, 1);
+        beeper->start();
+    }else{
+        gpio_set_value(Beeper, 0);
+        beeper->stop();
     }
 }
 

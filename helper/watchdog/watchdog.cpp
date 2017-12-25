@@ -4,7 +4,11 @@
 WatchDog::WatchDog(QObject *parent) : QObject(parent)
 {}
 
-//放狗
+/**************************************************
+ * @brief:  放狗，创建守护进程，守护进程每隔20s喂狗一次
+ * @param：
+ * @return:
+ **************************************************/
 void WatchDog::startWatchDog()
 {
     pid_t dogPid = fork();
@@ -31,6 +35,5 @@ void WatchDog::startWatchDog()
             sleep(20);
             ioctl(fd,WDIOC_KEEPALIVE,NULL);//喂狗
         }
-
     }
 }

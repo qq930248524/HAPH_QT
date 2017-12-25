@@ -180,14 +180,27 @@ void DataOperator::createReport(QString payload)
  * mqtt链接后，再次push未发送数据 *
  * 每次都开启一个子线程来操作数据  *
  * ****************************/
-void DataOperator::rePushPendingData()
+void DataOperator::rePushPendingData_start()
 {
-    qDebug()<< "================== rePushPendingData()";
-    if(!this->isRunning() && QDir(dataPendDir).entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot).size() > 0){
-        qDebug()<< "================== rePushPendingData() -> start()";
+    isOn = true;
+    qDebug()<< "================== rePushPendingData_start()";
+    if(!this->isRunning() &&
+            QDir(dataPendDir).entryInfoList(QDir::Dirs|QDir::NoDotAndDotDot).size() > 0){
+        qDebug()<< "================== rePushPendingData_start() -> start()";
         this->start();
     }
 }
+/******************************
+ * mqtt失去链接后，停止线程 *
+ * ****************************/
+void DataOperator::rePushPendingData_stop()
+{
+    qDebug()<< "================== rePushPendingData_stop()";
+    isOn = false;
+    this->quit();
+    this->wait();
+}
+
 
 void DataOperator::run()
 {
@@ -218,11 +231,12 @@ void DataOperator::run()
             QString str_data = QString(QLatin1String(&c_data[0]));
             MsgType type = (MsgType)str_data.mid(0,1).toInt();
             QString payload = str_data.mid(2);
-            //qDebug() << QString("repush +++++++++++++++++ type:%1  payload:%2").arg(type).arg(payload);
+            qDebug() << QString("repush +++++++++++++++++ type:%1  payload:%2").arg(type).arg(payload);
 
             emit needPush((int)type, payload);
 
-            if( mqttOperator->isOnline == false ){
+            if( isOn == false ){
+                qDebug() << LABEL + "repush data, but isOn = false, QThread will return.";
                 return;
             }
             QFile::remove(oneFile.absoluteFilePath());

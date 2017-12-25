@@ -22,7 +22,7 @@ public:
 
     bool isOnline = false;
     bool isOnline2 = false;
-    const int aliave = 10;
+    const int aliave = 30;
 
     QMQTT::Client *client = NULL;
     DasData *dasData;

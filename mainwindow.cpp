@@ -34,6 +34,11 @@ MainWindow::MainWindow(QWidget *parent)
     //helper->dataOperator->test();
 }
 
+/**************************************************
+ * @brief:  object类内部定时器的槽函数
+ * @param：  enevt：事件（暂时未使用）
+ * @return:
+ **************************************************/
 void MainWindow::timerEvent(QTimerEvent *event)
 {
     log->append("======= timeEvent ======");
@@ -72,18 +77,18 @@ void MainWindow::timerEvent(QTimerEvent *event)
 
             double Iin;
             if(oneChannel.ACOrDC == "DC"){
-                Iin = (modeData[i]*20)/(4096*16);
+                Iin = (double)(modeData[i]*20)/(4096*16.0);
             }else{
                 if(oneChannel.InputValueMax == 20){
-                    Iin = (modeData[i]*20*sqrt(2.0))/(2047*16);
+                    Iin = (double)(modeData[i]*20*sqrt(2.0))/(2047*16.0);
                 }else if(oneChannel.InputValueMax == 100){
-                    Iin = (modeData[i]*100*sqrt(2.0))/(2047*16);
+                    Iin = (double)(modeData[i]*100*sqrt(2.0))/(2047*16.0);
                 }
             }
             Iin = Iin<oneChannel.InputValueMin ? oneChannel.InputValueMin:Iin;
 
             double Iout;
-            Iout = (Iin - oneChannel.InputValueMin)
+            Iout = (double)(Iin - oneChannel.InputValueMin)
                     *(oneChannel.OutputValueMax-oneChannel.OutputValueMin)
                     /(oneChannel.InputValueMax-oneChannel.InputValueMin)
                     +oneChannel.OutputValueMin;
@@ -91,7 +96,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
             if(isOriginal == false){
                 oneShow->setValue(Iout);
             }else{
-                oneShow->setValue(Iin);
+                oneShow->setValue(modeData[i]);
             }
 
             //set on off label
@@ -104,7 +109,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
                     oneShow->setOn(1);
                 }
             }
-            //qDebug() << "[UI] Iin = "<< Iin << " Iout = " << Iout;
+            //qDebug() << "[UI] Iin = "<< Iin << " Iout = " << Iout << "origData = " << modeData[i];
         }
     }
     if(++modeNum == helper->dasConfig->dasData.enterprise.Modules.size()){
@@ -112,21 +117,11 @@ void MainWindow::timerEvent(QTimerEvent *event)
     }
 }
 
-int MainWindow::getDigCount(double data)
-{
-    int left = data;
-    double right = data - left;
-
-    int digCount = 1;
-    if(left/1000 != 0)  digCount++;
-    if(left/100 != 0)   digCount++;
-    if(left/10  != 0)   digCount++;
-
-    if(right>0.001)   digCount+=4;
-
-    return digCount;
-}
-
+/**************************************************
+ * @brief:  初始化UI控件，主界面的控件全部在这里初始化
+ * @param：
+ * @return:
+ **************************************************/
 void MainWindow::showWidget()
 {
     gridWidget.resize(CHANNELSIZE);
@@ -222,6 +217,11 @@ void MainWindow::showWidget()
     this->setCentralWidget(mainwidget);
 }
 
+/**************************************************
+ * @brief:  setting的槽函数，用来启动设置界面
+ * @param：
+ * @return:
+ **************************************************/
 void MainWindow::startSet()
 {
 
@@ -330,7 +330,7 @@ void MainWindow::mqttConnectted()
     qDebug() << "[MQTT] connectted !!! ";
     btn_mqtt->setStyleSheet(onStr);
     helper->mqttOperator->isOnline = true;
-    helper->dataOperator->rePushPendingData();
+    helper->dataOperator->rePushPendingData_start();
 }
 void MainWindow::mqttDisConnectted()
 {
@@ -338,6 +338,7 @@ void MainWindow::mqttDisConnectted()
     qDebug() << "[MQTT] disConnectted! --! ";
     btn_mqtt->setStyleSheet(ofStr);
     helper->mqttOperator->isOnline = false;
+    helper->dataOperator->rePushPendingData_stop();
 }
 
 void MainWindow::conversionData()

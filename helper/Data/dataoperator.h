@@ -22,6 +22,7 @@ class DataOperator : public QThread
 {
     Q_OBJECT
 public:
+    bool isOn = true;
     const QString LABEL = QString("[DATA_OPT] ");
     DataOperator();
     DataOperator(MqttOperator *, bool isEncrypt = false);
@@ -39,7 +40,8 @@ public:
 
     void transmitCfg(DasConfig *);
     void initDir();
-    void rePushPendingData();
+    void rePushPendingData_start();
+    void rePushPendingData_stop();
 
 public slots:
 

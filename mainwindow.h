@@ -56,7 +56,6 @@ private:
     void showWidget();
     QTimer *dasTimer = NULL;
     QNetworkConfigurationManager networkManager;
-    int getDigCount(double data);
 
 public slots:
     void startSet();
