@@ -59,7 +59,6 @@ private:
     bool writeDevRegister(int dev, uint16_t address, uint16_t value);
 
     bool sendSerial(bool isRead, int devId, uint16_t startReg, uint16_t nORv);
-    bool recvSerial();
 
     bool parseDeviceConfig(DataGatherConfiguration&, int32_t*, int);
 

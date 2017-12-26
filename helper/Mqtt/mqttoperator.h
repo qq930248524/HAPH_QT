@@ -22,7 +22,7 @@ public:
 
     bool isOnline = false;
     bool isOnline2 = false;
-    const int aliave = 30;
+    const int aliave = 10; //心跳
 
     QMQTT::Client *client = NULL;
     DasData *dasData;
@@ -37,6 +37,9 @@ public slots:
     bool sendPower(bool isDC, QString payload);
     bool sendDoor(bool isOpen, QString payload);
     bool sendSensor(bool isOn, QString payload);
+
+    void on_recvMsg(const QMQTT::Message &);
+    void on_connected();
 };
 
 #endif // MQTTOPERATOR_H

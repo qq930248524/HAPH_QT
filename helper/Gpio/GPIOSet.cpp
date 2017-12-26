@@ -62,7 +62,7 @@ bool GPIOset::initUart()
 
 
 void GPIOset::run()
-{
+{    
     const int dfsSize = 2;
     struct pollfd fds[dfsSize];
     fds[DOOR].fd = gpio_fd_open(Door, O_RDONLY);
@@ -81,14 +81,19 @@ void GPIOset::run()
             if(fds[i].revents & POLLPRI){
                  if(lseek(fds[i].fd, 0, SEEK_SET) == -1){}
                  if(read(fds[i].fd, &result, 1) == -1){}
+                 bool flag = (result == '1'?true:false);
                  switch (i) {
                  case DOOR:
-                     isDoor = (result == '1');
+                     if(isDoor == flag){
+                         continue;
+                     }
+                     isDoor = flag;
                      qDebug()<<LABEL + " --------------- Door is " + result;
                      emit door(isDoor);
                      break;
+
                  case ACDC:
-                     isDcAc = (result == '1');
+                     isDcAc = flag;
                      qDebug()<<LABEL + "----------------DC_AC is " + result;
                      emit dcac(isDcAc);
                      break;

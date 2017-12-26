@@ -11,7 +11,18 @@ MqttOperator::MqttOperator(QObject *parent, QMQTT::Client *client, DasData *dasD
     :client(client),dasData(dasData)
 {
     client->setKeepAlive(aliave);
+
+    connect(client, SIGNAL(connected()), this, SLOT(on_connected()));
     connect(client, SIGNAL(pingresp()), this, SLOT(onPingresp()));
+    connect(client, SIGNAL(received(const QMQTT::Message &)), this, SLOT(on_recvMsg(const QMQTT::Message &)));
+}
+
+
+
+void MqttOperator::on_connected()
+{
+    //一定要先链接，后订阅
+    client->subscribe("haph/cep/data/140108000010/HAPH-HB01-201601-0003", 0);
 }
 
 
@@ -27,7 +38,7 @@ void MqttOperator::onPingresp()
 {
     if(dog == NULL){//初始化定时器dog，用来判断mqtt是否在线
         dog = new QTimer();
-        dog->setInterval(aliave * 1000);
+        dog->setInterval(aliave * 1000 * 6);
         connect(dog, SIGNAL(timeout()), this, SLOT(checkDog()));
         dog->start();
     }
@@ -226,4 +237,18 @@ bool MqttOperator::sendSensor(bool isOn, QString payload)
     }
     qDebug() << "[MQTT] [sendNotify]: " << notifyTopic;
     return true;
+}
+
+/**************************************************
+ * @brief:  订阅mqtt
+ * @param：
+ * @return:
+ **************************************************/
+void MqttOperator::on_recvMsg(const QMQTT::Message &msg)
+{
+    qDebug()<<"========================================= recv";
+    QString top = msg.topic();
+    QByteArray payload = msg.payload();
+    QString pay = payload;
+    qDebug()<< "[SUB]" << "top=" << top << " pay=" << pay;
 }

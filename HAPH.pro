@@ -58,7 +58,8 @@ HEADERS += mainwindow.h \
     helper/Data/dataoperator.h \
     shownum.h \
     helper/AES/aes.h \
-    setting/tableWidget/print.h
+    setting/tableWidget/print.h \
+    helper/Printer/printer.h
 SOURCES += main.cpp \
            mainwindow.cpp \
            timewidget.cpp \
@@ -89,7 +90,8 @@ SOURCES += main.cpp \
     helper/Data/dataoperator.cpp \
     shownum.cpp \
     helper/AES/aes.cpp \
-    setting/tableWidget/print.cpp
+    setting/tableWidget/print.cpp \
+    helper/Printer/printer.cpp
 RESOURCES += pic.qrc
 
 FORMS += \

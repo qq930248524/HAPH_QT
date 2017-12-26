@@ -144,12 +144,7 @@ bool Helper::initMqtt()
     if(mqttOperator == NULL){
         mqttOperator = new MqttOperator(this, client, &dasConfig->dasData);
     }  
-
-    if(client->isConnectedToHost()){
-        return true;
-    }else{
-        return false;
-    }
+    return true;
 }
 
 bool Helper::checkSerial()
@@ -249,13 +244,16 @@ void Helper::onGetAllpRef_ret(int32_t *data)
         }//over 通道
     }//over 模块
     if(mqttOperator->sendData(msg) == false){
-        mqttOperator->isOnline = false;
         initMqtt();
     }
     dataOperator->save(DataOperator::GeneralData, msg);
 }
 
-//timer slot
+/**************************************************
+ * @brief:  helper定时器槽函数，每隔SamplingFrequency时间，调用一次onGetAllpRef（idArray）
+ * @param：
+ * @return:
+ **************************************************/
 void Helper::onGetAllpRef_time()
 {
     DasData dasData = dasConfig->dasData;

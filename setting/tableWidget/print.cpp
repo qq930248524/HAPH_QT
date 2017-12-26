@@ -78,6 +78,10 @@ void Print::on_btnPrint()
         return;
     }
 
+    if(printer==NULL){
+        printer = new Printer();
+    }
+
     //判断时间合法性、文件正确性
     QDateTime startDate(ui->startDate->date(), QTime(0, 0, 0));
     QDateTime endDate(ui->endDate->date(), QTime(23, 59, 59));
@@ -91,11 +95,22 @@ void Print::on_btnPrint()
     QFile channelFile(fileName);
     if(!channelFile.exists()){
         ui->log->append("本地没有通道状态文件！ fileName:" + fileName);
+        return;
     }
     if(!channelFile.open(QIODevice::ReadOnly | QIODevice::Text)){
         ui->log->append("本地通道状态文件打开失败！ fileName:" + fileName);
+        return;
     }
 
+    printer->print_data("---------------------");
+    printer->print_data(QString("【统计信息】"));
+    printer->print_data(QString("模块Id：%1").arg(oneModule.Id));
+    printer->print_data(QString("通道Id: %1").arg(oneChannel.Id));
+    printer->print_data(QString("通道名称: %1").arg(oneChannel.Name));
+    printer->print_data(QString("统计开始时间：%1").arg(startDate.toString("yy-MM-dd")));
+    printer->print_data(QString("统计结束时间：%1").arg(endDate.toString("yy-MM-dd")));
+    printer->print_data(" ");
+    printer->print_data(QString("【开始统计】"));
     //开始读取数据
     QTextStream out(&channelFile);
     bool isGoOn = true;
@@ -103,16 +118,20 @@ void Print::on_btnPrint()
     QDateTime closeTime;
     QDateTime itemTime;
     long long allTime = 0;
+
     while (!out.atEnd()) {
         QStringList oneItem_list = out.readLine().remove('\n').split('@');
         itemTime = QDateTime::fromString(oneItem_list[0].simplified(), "yyyy-MM-dd hh:mm:ss");
         int val     = oneItem_list[1].toInt();  //1=true 0=false
-
         if(startDate <= itemTime && endDate >= itemTime){
             isGoOn = false;
             //check()
             if(val != chanelState){ //状态改变了，计算时间
-                ui->log->append(QString("%1 @%2").arg(oneItem_list[0]).arg(QString(oneItem_list[1])));
+                QString dataStr = QString(oneItem_list[0]) + ((val == true)?" 开机":" 停机");
+                ui->log->append(dataStr);
+
+                printer->print_data(dataStr);
+
                 if(val == false){ //从通道关闭开始计时
                     closeTime = itemTime;
                 }
@@ -126,9 +145,23 @@ void Print::on_btnPrint()
         }
     }//end while
     if(chanelState == false){//如果最后状态为关，则加上剩余时间
-        allTime += itemTime.secsTo(QDateTime(itemTime.date().addDays(1), QTime(0,0,0)));
+        allTime += closeTime.secsTo(endDate);
     }
     channelFile.close();
-    ui->log->append(QString("allTime:%1 s").arg(allTime));
+
+
+    ui->log->append("【统计结果】");
+    ui->log->append(QString("总共停机时间:%1 s").arg(allTime));
+    ui->log->append(QString("总共运行时间:%1 s").arg(startDate.secsTo(endDate)));
+    ui->log->append(QString("通道停运率:%1 %").arg(100*allTime/startDate.secsTo(endDate)));
+
+    printer->print_data(" ");
+    printer->print_data("【统计结果】");
+    printer->print_data(QString("总共停机时间:%1 s").arg(allTime));
+    printer->print_data(QString("总共运行时间:%1 s").arg(startDate.secsTo(endDate)));
+    printer->print_data(QString("通道停运率:%1 %").arg(100*allTime/startDate.secsTo(endDate)));
+    printer->print_data(" ");
+    printer->print_data(" ");
+    printer->print_data(" ");
 }
 

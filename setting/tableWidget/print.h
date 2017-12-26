@@ -2,8 +2,10 @@
 #define PRINT_H
 
 #include <QWidget>
+#include <QTextCodec>
 
 #include "helper/helper.h"
+#include "helper/Printer/printer.h"
 extern Helper *helper;
 
 
@@ -16,9 +18,11 @@ class Print : public QWidget
     Q_OBJECT
 
 public:
+    QString LABEL = "[PRINT]";
     explicit Print(QWidget *parent = 0);
     ~Print();
 
+    Printer *printer = NULL;
     void initUI();
 
 public slots:

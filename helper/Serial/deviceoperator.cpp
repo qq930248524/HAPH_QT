@@ -80,6 +80,7 @@ void DeviceOperator::getDeviceInfo(int dev)
     {
         emit deviceInformationGot(false, cfg);
     }
+
 }
 
 //设置设备配置信息
@@ -639,39 +640,6 @@ bool DeviceOperator::sendSerial(bool isRead, int devId, uint16_t startReg, uint1
 
     emit    sendMsg(QByteArray(msgBuffer, msgLen));
     return true;
-}
-
-bool DeviceOperator::recvSerial()
-{
-//    QByteArray data = port->readAll();
-//    emit    reavMsg(data);
-
-//    //------------------------------check data
-//    // 检查消息CRC是否正确
-//    if(usMBCRC16(data.data(), data.length()))
-//    {
-//        std::cout << "write register error, received " << recvLength << " bytes esponse." << std::endl;
-//        return false;
-//    }
-
-//    int funNum = useZigbee?2:1;
-
-//    switch (data[funNum]) {
-//    case 0x03:
-
-//        break;
-//    case 0x06:
-//        break;
-//    case 0x83:
-//        break;
-//    case 0x86:
-//        break;
-//    default:
-//        break;
-//    }
-
-//    // write success
-//    return true;
 }
 
 /*
