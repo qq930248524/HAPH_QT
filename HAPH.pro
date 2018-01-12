@@ -4,7 +4,7 @@
 
 QT += core gui serialport widgets network
 
-target.path = /home/HAPH/
+target.path = /home/HAPH/haph
 INSTALLS += target
 
 contains(DEFINES,ARM){

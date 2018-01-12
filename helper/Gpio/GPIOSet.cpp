@@ -79,27 +79,27 @@ void GPIOset::run()
         char result = 0x00;
         for(int i = 0; i < dfsSize; i++){
             if(fds[i].revents & POLLPRI){
-                 if(lseek(fds[i].fd, 0, SEEK_SET) == -1){}
-                 if(read(fds[i].fd, &result, 1) == -1){}
-                 bool flag = (result == '1'?true:false);
-                 switch (i) {
-                 case DOOR:
-                     if(isDoor == flag){
-                         continue;
-                     }
-                     isDoor = flag;
-                     qDebug()<<LABEL + " --------------- Door is " + result;
-                     emit door(isDoor);
-                     break;
+                if(lseek(fds[i].fd, 0, SEEK_SET) == -1){}
+                if(read(fds[i].fd, &result, 1) == -1){}
+                bool flag = (result == '1'?true:false);
+                switch (i) {
+                case DOOR:
+                    if(isDoor == flag){
+                        continue;
+                    }
+                    isDoor = flag;
+                    qDebug()<<LABEL + " --------------- Door is " + result;
+                    emit door(isDoor);
+                    break;
 
-                 case ACDC:
-                     isDcAc = flag;
-                     qDebug()<<LABEL + "----------------DC_AC is " + result;
-                     emit dcac(isDcAc);
-                     break;
-                 default:
-                     break;
-                 }
+                case ACDC:
+                    isDcAc = flag;
+                    qDebug()<<LABEL + "----------------DC_AC is " + result;
+                    emit dcac(isDcAc);
+                    break;
+                default:
+                    break;
+                }
             }
         }
 
@@ -229,15 +229,15 @@ int GPIOset::gpio_set_value(unsigned int gpio, unsigned int value)
     }
 
     if (value!=0)
-        {
+    {
         int i = write(fd, "1", 2);
         //printf ("\nGPIO-%d value set high\n", gpio);
-        }
+    }
     else
-        {
+    {
         write(fd, "0", 2);
         //printf ("\nGPIO-%d value set low\n", gpio);
-        }
+    }
 
     close(fd);
     //printf ("\nSucessfully set GPIO-%d value\n", gpio);

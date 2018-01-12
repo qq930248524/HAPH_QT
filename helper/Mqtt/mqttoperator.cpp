@@ -2,6 +2,7 @@
 #include "qmqtt.h"
 
 #include <QDateTime>
+#include <QProcess>
 
 MqttOperator::MqttOperator(QObject *parent) : QObject(parent)
 {
@@ -17,14 +18,11 @@ MqttOperator::MqttOperator(QObject *parent, QMQTT::Client *client, DasData *dasD
     connect(client, SIGNAL(received(const QMQTT::Message &)), this, SLOT(on_recvMsg(const QMQTT::Message &)));
 }
 
-
-
 void MqttOperator::on_connected()
 {
     //一定要先链接，后订阅
-    client->subscribe("haph/cep/data/140108000010/HAPH-HB01-201601-0003", 0);
+    client->subscribe("haph/cep/query", 0);
 }
-
 
 /**************************************************
  * @brief:
@@ -124,8 +122,8 @@ bool MqttOperator::sendData(QString payLoad)
 
     if(isOnline == false){
         qDebug() << "[MQTT] [sendData] false. data:" << dataTopic << payLoad;
-//        qDebug() << "inOnline = " << isOnline;
-//        qDebug() << "client->isConnectedToHost() = " << client->isConnectedToHost();
+        //        qDebug() << "inOnline = " << isOnline;
+        //        qDebug() << "client->isConnectedToHost() = " << client->isConnectedToHost();
         return false;
     }else{
         QMQTT::Message msg(0, dataTopic, payLoad.toLatin1(), qos);
@@ -251,4 +249,14 @@ void MqttOperator::on_recvMsg(const QMQTT::Message &msg)
     QByteArray payload = msg.payload();
     QString pay = payload;
     qDebug()<< "[SUB]" << "top=" << top << " pay=" << pay;
+
+    QProcess pro(this);
+    if(pay == "update"){
+        qDebug() << "[MQTT] receive update cmd!";
+        pro.startDetached("/home/HAPH/cmd/update.sh");
+    }
+    if(pay == "reboot"){
+        qDebug() << "[MQTT] receive reboot cmd!";
+        pro.startDetached("/home/HAPH/cmd/reboot.sh");
+    }
 }
