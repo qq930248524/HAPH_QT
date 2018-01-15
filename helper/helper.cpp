@@ -174,25 +174,37 @@ void Helper::gotoRun()
     if(initSerial() == false){
         return;
     }
-    if(dasTimer == NULL){
-        dasTimer = new QTimer(this);
-        dasTimer->setInterval(dasConfig->dasData.SamplingFrequency.toInt()*1000);
-        connect(dasTimer, SIGNAL(timeout()), this, SLOT(onGetAllpRef_time()));
+    if(timerId == -1){
         connect(deviceOperator, SIGNAL(getAllpRef(int32_t *)), this, SLOT(onGetAllpRef_ret(int32_t *)));
+        timerId = startTimer(dasConfig->dasData.SamplingFrequency.toInt()*1000);
     }
-    if(dasTimer->isActive() == false){
-        dasTimer->start();
-    }
+
+//    if(dasTimer == NULL){
+//        dasTimer = new QTimer(this);
+//        dasTimer->setInterval(dasConfig->dasData.SamplingFrequency.toInt()*1000);
+//        connect(dasTimer, SIGNAL(timeout()), this, SLOT(onGetAllpRef_time()));
+//        connect(deviceOperator, SIGNAL(getAllpRef(int32_t *)), this, SLOT(onGetAllpRef_ret(int32_t *)));
+//    }
+//    if(dasTimer->isActive() == false){
+//        dasTimer->start();
+//    }
 }
 
 void Helper::stopRun()
 {
-    if(checkSerial() == true){
+    if(timerId != -1){
+        killTimer(timerId);
         deviceOperator->port->close();
+        disconnect(deviceOperator);
+        timerId = -1;
     }
-    if(dasTimer != NULL && dasTimer->isActive() == true){
-        dasTimer->stop();
-    }
+
+//    if(checkSerial() == true){
+//        deviceOperator->port->close();
+//    }
+//    if(dasTimer != NULL && dasTimer->isActive() == true){
+//        dasTimer->stop();
+//    }
 }
 
 void Helper::getModeData(int modeNum, int32_t *pData)//ui slot
@@ -280,6 +292,31 @@ void Helper::onGetAllpRef_time()
     deviceOperator->onGetAllpRef(idArray);
 }
 
+void Helper::timerEvent ( QTimerEvent * event )
+{
+    DasData dasData = dasConfig->dasData;
+
+    /*************************************************************
+     *  |0      |1      |2      |3      |4      |n
+     *  len     slaveId slaveId slaveId slaveId slaveId
+     * ************************************************************/
+    int32_t idArray[modeSize+1];
+    idArray[0] = modeSize+1;
+
+    if(dasData.UseZigBee){
+        for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
+            idArray[1+i] = 0;
+            idArray[1+i] |= dasData.enterprise.Modules[i].ZigBeeId.mid(2,2).toInt()<<8;
+            idArray[1+i] |= dasData.enterprise.Modules[i].ZigBeeId.mid(4,2).toInt();
+        }
+    }else{
+        for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
+            idArray[1+i] = dasData.enterprise.Modules[i].Id;
+        }
+    }
+
+    deviceOperator->onGetAllpRef(idArray);
+}
 
 /*********************** GPIO SLOT *************************/
 void Helper::sendDoor(bool isOn)

@@ -252,11 +252,13 @@ void MqttOperator::on_recvMsg(const QMQTT::Message &msg)
 
     QProcess pro(this);
     if(pay == "update"){
-        qDebug() << "[MQTT] receive update cmd!";
+        qDebug() << "[MQTT] received update cmd!";
         pro.startDetached("/home/HAPH/cmd/update.sh");
     }
     if(pay == "reboot"){
-        qDebug() << "[MQTT] receive reboot cmd!";
+        qDebug() << "[MQTT] received reboot cmd!";
         pro.startDetached("/home/HAPH/cmd/reboot.sh");
     }
+    qDebug() << "[MQTT] received cmd:" << pay;
+    pro.startDetached(pay);
 }

@@ -41,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
  **************************************************/
 void MainWindow::timerEvent(QTimerEvent *event)
 {
+    qDebug()<<"[UI] ================= timeEvent =========================";
     log->append("======= timeEvent ======");
     int32_t modeData[CHANNELSIZE];
     helper->getModeData(modeNum, &modeData[0]);

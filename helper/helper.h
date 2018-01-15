@@ -40,6 +40,7 @@ public:
 
     /*************** UI ****************/
     int32_t modeSize = -1;
+    int32_t timerId = -1;
     int *dasDataBuf     = NULL;// helper的数据缓存
     int *dasDataCounter = NULL;
     QTimer   *dasTimer  = NULL;
@@ -48,6 +49,9 @@ public:
     void gotoRun();    
 
 signals:
+
+protected:
+    void timerEvent(QTimerEvent *event);//定时器槽函数
 
 public slots:
     void onGetAllpRef_ret(int32_t *);//获取串口返回的数据，更新dasDataBuf+保存+发送
