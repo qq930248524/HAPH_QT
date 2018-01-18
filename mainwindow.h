@@ -69,6 +69,8 @@ public slots:
     void mqttConnectted();
     void mqttDisConnectted();
     void networkStatusChanges(bool);
+
+    void reboot();
 };
 
 #endif // MAINWINDOW_H

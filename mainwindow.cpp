@@ -9,6 +9,7 @@
 #include <QLayout>
 #include <QDebug>
 #include <iostream>
+#include <QTimer>
 
 Helper *helper  = NULL;
 
@@ -32,6 +33,11 @@ MainWindow::MainWindow(QWidget *parent)
         startTimer(helper->dasConfig->dasData.QueryDelay.toInt(), Qt::VeryCoarseTimer);
     }
     //helper->dataOperator->test();
+    QTimer::singleShot(1000*60*60*24, this, SLOT(reboot()));
+}
+void MainWindow::reboot()
+{
+    system("reboot");
 }
 
 /**************************************************
@@ -63,7 +69,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
             oneShow->setUnit(oneChannel.DataUnit);
         }
 
-        if(modeData[modeNum*CHANNELSIZE+i] == -1 || channelIndex == -1){
+        if(modeData[i] == -1 || channelIndex == -1){
             oneShow->setValue(-1);
             oneShow->setOn(-1);
         }else{            

@@ -27,8 +27,16 @@ public:
     DasConfig *dasConfig;
     DataOperator    *dataOperator   = NULL;
     MqttOperator    *mqttOperator   = NULL;
-    DeviceOperator  *deviceOperator = NULL;
-    DeviceOperator  *setting_deviceOperator = NULL;
+
+    //每个串口对应一个QSerialPort *；
+    //每个模块对应一个DeviceOperator对象
+    //一个DeviceOperator包含一个QSerialPort*
+    //一个QSerialPort *可能被多个DeviceOperator对象包含
+    QVector <QSerialPort *>     serialList;
+    QVector <DeviceOperator *>    deviceOptList;
+
+    //用于设置界面的串口操作实体对象
+    DeviceOperator *            setting_deviceOperator = NULL;
 
     bool checkSerial();
     bool checkMqtt();
@@ -43,6 +51,7 @@ public:
     int32_t timerId = -1;
     int *dasDataBuf     = NULL;// helper的数据缓存
     int *dasDataCounter = NULL;
+
     QTimer   *dasTimer  = NULL;
     void getModeData(int modeNum, int32_t *pData);
     void stopRun();
@@ -54,8 +63,8 @@ protected:
     void timerEvent(QTimerEvent *event);//定时器槽函数
 
 public slots:
-    void onGetAllpRef_ret(int32_t *);//获取串口返回的数据，更新dasDataBuf+保存+发送
-    void onGetAllpRef_time();//定时器主动发送获取数据的请求
+//    void onGetAllpRef_ret(int32_t *);//获取串口返回的数据，更新dasDataBuf+保存+发送
+//    void onGetAllpRef_time();//定时器主动发送获取数据的请求
     void sendDoor(bool);
     void sendPower(bool);
 };

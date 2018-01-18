@@ -22,6 +22,8 @@ public:
 
 class Module{
 public:
+    QString comName;
+    quint32 BaudRate;
     quint16 Id;
     QString ZigBeeId;
     QVector<Channel> Channels;
@@ -45,7 +47,6 @@ public:
 
 class DasData{
 public:
-    QString comName;
     QString Server;
     quint32 Port;
     QString Username;
@@ -53,8 +54,6 @@ public:
     QString QueryDelay;
     QString RetryCount;
     QString SamplingFrequency;
-    bool    UseZigBee;
-    quint32 BaudRate;
     QString ZigBeeId;
     bool    EncryptLog;
     Enterprise enterprise;

@@ -11,7 +11,6 @@ contains(DEFINES,ARM){
     LIBS += -L/opt/tslib/lib/ -lts
 }
 
-
 TEMPLATE = app
 TARGET = HAPH
 INCLUDEPATH += .
@@ -52,9 +51,6 @@ HEADERS += mainwindow.h \
     helper/Mqtt/mqttoperator.h \
     helper/watchdog/watchdog.h \
     helper/Gpio/GPIOSet.h \
-    helper/Gpio/gpioset.h \
-    helper/Gpio/GPIOSet.h \
-    helper/dataControl/datacontrol.h \
     helper/Data/dataoperator.h \
     shownum.h \
     helper/AES/aes.h \

@@ -5,6 +5,7 @@ Helper::Helper(QObject *parent) : QObject(parent)
     dasConfig = new DasConfig();
     if(dasConfig->init("/etc/dasconfig.json") == true){
         modeSize = dasConfig->dasData.enterprise.Modules.size();
+
         dasDataBuf = new int [modeSize*CHANNELSIZE];
         dasDataCounter = new int[modeSize];
         for(int i = 0; i < CHANNELSIZE*modeSize; i++){
@@ -13,7 +14,6 @@ Helper::Helper(QObject *parent) : QObject(parent)
         for(int i = 0; i < modeSize; i++){
             dasDataCounter[i] = -1;
         }
-
         initSerial();
         initMqtt();
         initGPIO();
@@ -51,70 +51,56 @@ bool Helper::initDataControl()
 }
 
 bool Helper::initSerial()
-{    
+{
     DasData dasData = dasConfig->dasData;
-    if(dasData.comName.isEmpty()){
-        qDebug("open serial failed. dasconfig.comName is empty!");
-        return false;
-    }
     if(checkSerial()){ // don't reOpen
         qDebug("serial is oppend!");
         return true;
     }
 
-
-    QSerialPort *serialPort = NULL;
-    if(deviceOperator == NULL){
-        serialPort = new QSerialPort();
-    }else{
-        serialPort = deviceOperator->port;
-    }
-
-    serialPort->setPortName(dasData.comName);
-    serialPort->setBaudRate(dasData.BaudRate);
-    serialPort->setParity(QSerialPort::EvenParity);
-    serialPort->setDataBits(QSerialPort::Data8);
-    serialPort->setStopBits(QSerialPort::OneStop);
-    serialPort->setFlowControl(QSerialPort::NoFlowControl);
-
-    if(deviceOperator == NULL){
-        deviceOperator = new DeviceOperator(serialPort, dasData.UseZigBee);
-    }
-
-    if (dasData.UseZigBee == false){
-        deviceOperator->useZigbee = false;
-        deviceOperator->hostId = 0;
-    }else{
-        deviceOperator->useZigbee = true;
-        deviceOperator->hostId |= dasData.ZigBeeId.mid(2,2).toInt()<<8;
-        deviceOperator->hostId |= dasData.ZigBeeId.mid(4,2).toInt();
-    }
-
-    if(!serialPort->open(QIODevice::ReadWrite)){
-        qDebug() << QString("[serial] open serial faild!");
-        qDebug() << "   ==>comName: "    << dasData.comName;
-        qDebug() << "   ==>baudRate: "   << dasData.BaudRate;
-        qDebug() << "   ==>Odd|Even: QSerialPort::EvenParity";
-        qDebug() << "   ==>dataBit: QSerialPort::Data8";
-        qDebug() << "   ==>stopBit: QSerialPort::OneStop";
-        return false;
-    }else{
-        qDebug() << "[serial] open serial success!";
-        if(deviceOperator == NULL){
-            deviceOperator = new DeviceOperator(serialPort, dasData.UseZigBee);
+    //构建serialList和deviceOpeList
+    foreach (Module oneModule, dasData.enterprise.Modules) {//拒绝重复
+        QSerialPort *oneSerial = NULL;
+        foreach (QSerialPort *ser, serialList) {
+            QString str1 = oneModule.comName;
+            QString str2 = ser->portName();
+            if(oneModule.comName.indexOf(ser->portName())){
+                oneSerial = ser;
+            }
         }
-        return true;
+
+        if(oneSerial == NULL){ //添加一个串口
+            oneSerial = new QSerialPort();
+            oneSerial->setPortName(oneModule.comName);
+            oneSerial->setBaudRate(oneModule.BaudRate);
+            oneSerial->setParity(QSerialPort::EvenParity);
+            oneSerial->setDataBits(QSerialPort::Data8);
+            oneSerial->setStopBits(QSerialPort::OneStop);
+            oneSerial->setFlowControl(QSerialPort::NoFlowControl);
+            serialList.append(oneSerial);
+            if(!oneSerial->open(QIODevice::ReadWrite)){
+                qDebug() << QString("[serial] open serial faild!");
+                qDebug() << "   ==>comName: "    << oneSerial->portName();
+                qDebug() << "   ==>baudRate: "   << oneSerial->baudRate();
+                qDebug() << "   ==>Odd|Even: QSerialPort::EvenParity";
+                qDebug() << "   ==>dataBit: QSerialPort::Data8";
+                qDebug() << "   ==>stopBit: QSerialPort::OneStop";
+                return false;
+            }
+        }
+
+        int hostId = 0;
+        hostId |= dasData.ZigBeeId.mid(2,2).toInt()<<8;
+        hostId |= dasData.ZigBeeId.mid(4,2).toInt();
+        deviceOptList.append(new DeviceOperator(oneSerial, hostId));//添加一个devopt
     }
+    return true;
 }
 
 bool Helper::initMqtt()
 {
     DasData dasData = dasConfig->dasData;
 
-    if(dasData.comName.isEmpty()){//can't be open
-        qDebug() << "[MQTT] dasConfig.comName is Empty! ";
-        return false;
-    }
     if(checkMqtt()){//had been open
         qDebug() << "[MQTT] mqtt is connectted. so don't reopen!";
         return true;
@@ -127,7 +113,7 @@ bool Helper::initMqtt()
         client = mqttOperator->client;
     }
 
-//        client->setHostName("haph.mqtt.iot.gz.baidubce.com");
+    //        client->setHostName("haph.mqtt.iot.gz.baidubce.com");
     QHostAddress hostAdd(dasData.Server);
     client->setHost(hostAdd);
     client->setPort(dasData.Port);
@@ -135,23 +121,21 @@ bool Helper::initMqtt()
     client->setPassword(dasData.Password.toUtf8());
     //        client->setUsername("haph/dev1");
     //        client->setPassword(QString("/NNfooo+0EMPM6M/JINujITl9ADlQKlwvGg8p7ZLSg8=").toUtf8());
-    //client->setKeepAlive(10);
+    //        client->setKeepAlive(10);
     client->setCleanSession(true);
-    client->setClientId(dasData.enterprise.DeviceId);
+    client->setClientId(dasData.enterprise.SerialNo);
     client->connectToHost();
     qDebug() << "[MQTT] run connectToHost();" ;
 
     if(mqttOperator == NULL){
         mqttOperator = new MqttOperator(this, client, &dasConfig->dasData);
-    }  
+    }
     return true;
 }
 
 bool Helper::checkSerial()
 {
-    if(deviceOperator == NULL
-            || deviceOperator->port == NULL
-            || !deviceOperator->port->isOpen()){
+    if(serialList.size() == 0){
         return false;
     }
     return true;
@@ -175,73 +159,56 @@ void Helper::gotoRun()
         return;
     }
     if(timerId == -1){
-        connect(deviceOperator, SIGNAL(getAllpRef(int32_t *)), this, SLOT(onGetAllpRef_ret(int32_t *)));
         timerId = startTimer(dasConfig->dasData.SamplingFrequency.toInt()*1000);
     }
-
-//    if(dasTimer == NULL){
-//        dasTimer = new QTimer(this);
-//        dasTimer->setInterval(dasConfig->dasData.SamplingFrequency.toInt()*1000);
-//        connect(dasTimer, SIGNAL(timeout()), this, SLOT(onGetAllpRef_time()));
-//        connect(deviceOperator, SIGNAL(getAllpRef(int32_t *)), this, SLOT(onGetAllpRef_ret(int32_t *)));
-//    }
-//    if(dasTimer->isActive() == false){
-//        dasTimer->start();
-//    }
 }
 
 void Helper::stopRun()
 {
     if(timerId != -1){
         killTimer(timerId);
-        deviceOperator->port->close();
-        disconnect(deviceOperator);
+        foreach (QSerialPort *ser, serialList) {
+            ser->close();
+        }
         timerId = -1;
     }
-
-//    if(checkSerial() == true){
-//        deviceOperator->port->close();
-//    }
-//    if(dasTimer != NULL && dasTimer->isActive() == true){
-//        dasTimer->stop();
-//    }
 }
 
 void Helper::getModeData(int modeNum, int32_t *pData)//ui slot
 {
-    if(modeNum < 0 || modeNum >= modeSize || checkSerial() == false){
-        for(int i = 0; i < CHANNELSIZE; i++){
-            pData[i] = -1;
-            return;
-        }
-    }
     memcpy(pData, (void *)&dasDataBuf[modeNum*CHANNELSIZE], CHANNELSIZE*sizeof(int32_t));
 }
 
-/********************** SLOT deviceOpt *********************/
-/*******************
- * 收取到串口数据
- * 1/次数判断，三次错误不上传
- * 2/发送判断后的数据
- *
- * **********************/
-void Helper::onGetAllpRef_ret(int32_t *data)
+/*/**************************************************
+ * @brief:  helper后端定时器，间隔获取模块数据，并3次容错，最后mqtt发送+数据保存
+ * @param：无用
+ * @return: NULL
+ **************************************************/
+void Helper::timerEvent ( QTimerEvent * event )
 {
     QString msg = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
 
-    int32_t devNum = dasConfig->dasData.enterprise.Modules.size();
-
-    for(int i = 0; i < devNum; i++){//遍历模块
+    //开始获取数据
+    for (int i = 0; i < deviceOptList.size(); i++){
+        DeviceOperator * oneDevOpt = deviceOptList[i];
         Module oneModule = dasConfig->dasData.enterprise.Modules[i];
-        int firstChanChar = i*CHANNELSIZE + oneModule.Channels[0].Id - 1;//配置中i模块的第一个配置通道的字节数
-        if(data[firstChanChar] == -1){ //连续RetryCount次为-1才传输-1，否则传输最近一次非-1数据
+        int32_t zigbeeId = 0;
+        zigbeeId |= oneModule.ZigBeeId.mid(2,2).toInt()<<8;
+        zigbeeId |= oneModule.ZigBeeId.mid(4,2).toInt();
+        if(!oneDevOpt->readDevRegister(&dasDataBuf[i*CHANNELSIZE],
+                                       oneModule.Id,
+                                       zigbeeId,
+                                       MB_REG_ADCRES_ADDR,
+                                       MB_REG_ADCRES_LENGTH))
+        {//读取错误,计数加一
             if(++dasDataCounter[i] == dasConfig->dasData.RetryCount.toInt()){//次数用尽
                 dasDataCounter[i] = 0;
-                 memcpy(&dasDataBuf[i*CHANNELSIZE], &data[i*CHANNELSIZE], sizeof(int32_t)*CHANNELSIZE);
+                for(int j = 0; j < CHANNELSIZE; j++){
+                    dasDataBuf[i*CHANNELSIZE+j] = -1;
+                }
             }
-        }else{//工作正常
+        }else{
             dasDataCounter[i] = 0;
-            memcpy(&dasDataBuf[i*CHANNELSIZE], &data[i*CHANNELSIZE], sizeof(int32_t)*CHANNELSIZE);
         }
 
         for(int j = 0; j < oneModule.Channels.size(); j++){//便利通道
@@ -254,68 +221,12 @@ void Helper::onGetAllpRef_ret(int32_t *data)
                        .arg(channelId, 2, 10, QChar('0'))
                        .arg(dasDataBuf[channelIndex]));
         }//over 通道
-    }//over 模块
+    }
+
     if(mqttOperator->sendData(msg) == false){
         initMqtt();
     }
     dataOperator->save(DataOperator::GeneralData, msg);
-}
-
-/**************************************************
- * @brief:  helper定时器槽函数，每隔SamplingFrequency时间，调用一次onGetAllpRef（idArray）
- * @param：
- * @return:
- **************************************************/
-void Helper::onGetAllpRef_time()
-{
-    DasData dasData = dasConfig->dasData;
-
-    /*************************************************************
-     *  |0      |1      |2      |3      |4      |n
-     *  len     slaveId slaveId slaveId slaveId slaveId
-     * ************************************************************/
-    int32_t idArray[modeSize+1];
-    idArray[0] = modeSize+1;
-
-    if(dasData.UseZigBee){
-        for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
-            idArray[1+i] = 0;
-            idArray[1+i] |= dasData.enterprise.Modules[i].ZigBeeId.mid(2,2).toInt()<<8;
-            idArray[1+i] |= dasData.enterprise.Modules[i].ZigBeeId.mid(4,2).toInt();
-        }
-    }else{
-        for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
-            idArray[1+i] = dasData.enterprise.Modules[i].Id;
-        }
-    }
-
-    deviceOperator->onGetAllpRef(idArray);
-}
-
-void Helper::timerEvent ( QTimerEvent * event )
-{
-    DasData dasData = dasConfig->dasData;
-
-    /*************************************************************
-     *  |0      |1      |2      |3      |4      |n
-     *  len     slaveId slaveId slaveId slaveId slaveId
-     * ************************************************************/
-    int32_t idArray[modeSize+1];
-    idArray[0] = modeSize+1;
-
-    if(dasData.UseZigBee){
-        for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
-            idArray[1+i] = 0;
-            idArray[1+i] |= dasData.enterprise.Modules[i].ZigBeeId.mid(2,2).toInt()<<8;
-            idArray[1+i] |= dasData.enterprise.Modules[i].ZigBeeId.mid(4,2).toInt();
-        }
-    }else{
-        for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
-            idArray[1+i] = dasData.enterprise.Modules[i].Id;
-        }
-    }
-
-    deviceOperator->onGetAllpRef(idArray);
 }
 
 /*********************** GPIO SLOT *************************/

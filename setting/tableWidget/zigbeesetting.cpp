@@ -6,18 +6,18 @@ ZigbeeSetting::ZigbeeSetting(QWidget *parent) :
     ui(new Ui::ZigbeeSetting)
 {
     ui->setupUi(this);
-//    ui->logshow->clear();
+    ui->logshow->clear();
 
-//    connect(ui->pushButton_getPar, SIGNAL(pressed()), this, SLOT(getPar()));
-//    connect(ui->pushButton_setPar, SIGNAL(pressed()), this, SLOT(setPar()));
+    connect(ui->pushButton_getPar, SIGNAL(pressed()), this, SLOT(getPar()));
+    connect(ui->pushButton_setPar, SIGNAL(pressed()), this, SLOT(setPar()));
 
-//    initDev();
+    initDev();
 }
 
 void ZigbeeSetting::initDev()
 {
     if(helper->setting_deviceOperator == NULL){
-        helper->setting_deviceOperator = new DeviceOperator(NULL);
+        helper->setting_deviceOperator = new DeviceOperator(NULL,0);
     }
     deviceOperator = helper->setting_deviceOperator;
 

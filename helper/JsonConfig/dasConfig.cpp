@@ -4,7 +4,6 @@
 
 DasConfig::DasConfig(QObject *parent) : QObject(parent)
 {
-    dasData.comName = "";
 }
 
 
@@ -24,8 +23,7 @@ bool DasConfig::init(QString filepath)
         return false;
     }
 
-    QJsonObject obj = doc.object();
-    dasData.comName = obj["comName"].toString();
+    QJsonObject obj = doc.object();    
     dasData.Server  = obj["Server"].toString();
     dasData.Port    = obj["Port"].toInt();
     dasData.Username    = obj["Username"].toString();
@@ -33,8 +31,6 @@ bool DasConfig::init(QString filepath)
     dasData.QueryDelay  = obj["QueryDelay"].toString();
     dasData.RetryCount  = obj["RetryCount"].toString();
     dasData.SamplingFrequency   = obj["SamplingFrequency"].toString();
-    dasData.UseZigBee   = obj["UseZigBee"].toBool();
-    dasData.BaudRate    = obj["BaudRate"].toInt();
     dasData.ZigBeeId    = obj["ZigBeeId"].toString();
     dasData.EncryptLog   = obj["EncryptLog"].toBool();
     QJsonObject enterObj = obj["Enterprise"].toObject();
@@ -49,7 +45,9 @@ bool DasConfig::init(QString filepath)
     for(int i = 0; i < modeArray.size(); i++){
         Module mode;
         QJsonObject modeObj = modeArray.at(i).toObject();
-        mode.Id = modeObj["Id"].toInt();
+        mode.comName    = modeObj["comName"].toString();
+        mode.BaudRate   = modeObj["BaudRate"].toInt();
+        mode.Id         = modeObj["Id"].toInt();
         mode.ZigBeeId   = modeObj["ZigBeeId"].toString();
 
         QJsonArray  channelArray    = modeObj["Channels"].toArray();
@@ -74,10 +72,6 @@ bool DasConfig::init(QString filepath)
 
 int DasConfig::getModeNumByDevid(int devid)
 {
-    if(dasData.comName.isEmpty()){
-        return -1;
-    }
-
     for(int i = 0; i < dasData.enterprise.Modules.size(); i++){
         Module oneModule = dasData.enterprise.Modules[i];
 

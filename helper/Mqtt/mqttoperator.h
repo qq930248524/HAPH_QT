@@ -34,6 +34,7 @@ public slots:
     void onPingresp();
     void checkDog();
     bool sendData(QString );
+    bool sendVersion();
     bool sendPower(bool isDC, QString payload);
     bool sendDoor(bool isOpen, QString payload);
     bool sendSensor(bool isOn, QString payload);

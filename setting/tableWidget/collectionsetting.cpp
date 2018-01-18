@@ -157,7 +157,7 @@ void CollectionSetting::initButtonArrayUI()
 void CollectionSetting::initDev()
 {
     if(helper->setting_deviceOperator == NULL){
-        helper->setting_deviceOperator = new DeviceOperator(NULL);
+        helper->setting_deviceOperator = new DeviceOperator(NULL,0);
     }
     deviceOperator = helper->setting_deviceOperator;
 
@@ -203,11 +203,9 @@ void    CollectionSetting::searchModNum()
     }
 
     if(portNumBox->currentText() == "/dev/ttyS1"){
-        deviceOperator->useZigbee = true;
         deviceOperator->hostId |= helper->dasConfig->dasData.ZigBeeId.mid(2,2).toInt()<<8;
         deviceOperator->hostId |= helper->dasConfig->dasData.ZigBeeId.mid(4,2).toInt();
     }else{
-        deviceOperator->useZigbee = false;
         deviceOperator->hostId = 0;
     }
 
@@ -416,9 +414,9 @@ void    CollectionSetting::updateRecvText(QByteArray msg)
 
 void CollectionSetting::showPortInfo(QString portName)
 {
-    if(helper->dasConfig->dasData.comName.indexOf(portName) != -1){
-        logshow->append(QString("warning!!! port:%1 is dasconfig.comName ").arg(portName));
-    }
+//    if(helper->dasConfig->dasData.comName.indexOf(portName) != -1){
+//        logshow->append(QString("warning!!! port:%1 is dasconfig.comName ").arg(portName));
+//    }
 }
 
 void CollectionSetting::updateCheckArray(int index)

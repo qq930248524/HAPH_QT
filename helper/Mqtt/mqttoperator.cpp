@@ -3,6 +3,7 @@
 
 #include <QDateTime>
 #include <QProcess>
+#include <QSettings>
 
 MqttOperator::MqttOperator(QObject *parent) : QObject(parent)
 {
@@ -21,7 +22,13 @@ MqttOperator::MqttOperator(QObject *parent, QMQTT::Client *client, DasData *dasD
 void MqttOperator::on_connected()
 {
     //一定要先链接，后订阅
-    client->subscribe("haph/cep/query", 0);
+    QString manageTopic = QString("haph/cep/manage/%1/%2")
+            .arg(dasData->enterprise.Id)
+            .arg(dasData->enterprise.SerialNo);
+    client->subscribe(manageTopic, 0);
+
+    //每次链接后，先发送当前version信息
+    sendVersion();
 }
 
 /**************************************************
@@ -133,6 +140,48 @@ bool MqttOperator::sendData(QString payLoad)
     }
 }
 
+/*/**************************************************
+ * @brief:  发送当前版本信息
+ * @param：payload是负载
+ * @return: true=发送成功，false=发送失败
+ **************************************************/
+bool MqttOperator::sendVersion()
+{
+    QString path("/home/HAPH/haph/version");
+    QFile verFile(path);
+    if(!verFile.open(QIODevice::ReadOnly | QIODevice::Text)){
+        qDebug()<<"[MQTT] [sendVersion] 读取version文件错误； path=" << path;
+        return false;
+    }
+    QString major;
+    QString minor;
+    QString log;
+    QTextStream in(&verFile);
+    QString line = in.readLine();
+    while (!line.isNull()) {
+        if(line.startsWith("major")){
+            major = line.mid(line.indexOf(':')+1);
+        }
+        if(line.startsWith("minor")){
+            minor = line.mid(line.indexOf(':')+1);
+        }
+        if(line.startsWith("log")){
+            log = line.mid(line.indexOf(':')+1);
+        }
+        line = in.readLine();
+    }
+    verFile.close();
+
+    int qos = 1;
+    QString versionTopic = QString("/haph/cep/notify/version/%1/%2")
+            .arg(dasData->enterprise.Id)
+            .arg(dasData->enterprise.SerialNo);
+    QString payLoad = major+minor+"#"+log;
+    QMQTT::Message msg(0, versionTopic, payLoad.toLatin1(), qos);
+    client->publish(msg);
+    qDebug() << "[MQTT] [sendVersion]: " << versionTopic << payLoad;
+    return true;
+}
 
 /**************************************************
  * @brief:  发送电源状态
@@ -258,6 +307,10 @@ void MqttOperator::on_recvMsg(const QMQTT::Message &msg)
     if(pay == "reboot"){
         qDebug() << "[MQTT] received reboot cmd!";
         pro.startDetached("/home/HAPH/cmd/reboot.sh");
+    }
+    if(pay == "shutdown"){
+        qDebug() << "[MQTT] received shutdown cmd!";
+        pro.startDetached("shutdown -h now");
     }
     qDebug() << "[MQTT] received cmd:" << pay;
     pro.startDetached(pay);
