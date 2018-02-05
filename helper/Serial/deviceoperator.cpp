@@ -410,13 +410,13 @@ bool DeviceOperator::readDevRegister_modbus(int32_t* pRegs, int slaveId,
     emit    recvMsg(QByteArray((char *)recvBuffer, recvLength));
 
 
-    //    QString str =  QByteArray((char *)recvBuffer, recvLength).toHex().toUpper();
-    //    int len = str.length()/2;
-    //    for(int i = 0; i < len; i++){
-    //        str.insert(2*i+i-1, " ");
-    //    }
-    //    qDebug() << "[recv]<<" << str;
-    //    qDebug() << "recvLength = "<<recvLength << "   nRegisters=" << nRegisters;
+//        QString str =  QByteArray((char *)recvBuffer, recvLength).toHex().toUpper();
+//        int len = str.length()/2;
+//        for(int i = 0; i < len; i++){
+//            str.insert(2*i+i-1, " ");
+//        }
+//        qDebug() << "[recv]<<" << str;
+//        qDebug() << "recvLength = "<<recvLength << "   nRegisters=" << nRegisters;
 
     /* 响应数据已经接收完，开始消息处理 */
     if(recvLength != nRegisters*2 + 5){
@@ -446,6 +446,7 @@ bool DeviceOperator::readDevRegister_modbus(int32_t* pRegs, int slaveId,
     // ok! 收到期待的反馈响应，提取接收到的寄存器值
     for(int regIndex = 0; regIndex < nRegisters; ++regIndex)
     {
+        pRegs[regIndex] = 0;
         pRegs[regIndex]  = recvBuffer[msgOffset++] << 8U;
         pRegs[regIndex] |= recvBuffer[msgOffset++];
     }
@@ -554,6 +555,7 @@ bool DeviceOperator::readDevRegister_zigbee(int32_t* pRegs, int slaveId,
     // ok! 收到期待的反馈响应，提取接收到的寄存器值
     for(int regIndex = 0; regIndex < nRegisters; ++regIndex)
     {
+        pRegs[regIndex] = 0;
         pRegs[regIndex]  = recvBuffer[msgOffset++] << 8U;
         pRegs[regIndex] |= recvBuffer[msgOffset++];
     }

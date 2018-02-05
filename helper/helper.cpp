@@ -159,6 +159,9 @@ void Helper::gotoRun()
         return;
     }
     if(timerId == -1){
+        foreach (QSerialPort *ser, serialList) {
+            ser->open(QIODevice::ReadWrite);
+        }
         timerId = startTimer(dasConfig->dasData.SamplingFrequency.toInt()*1000);
     }
 }
@@ -186,7 +189,8 @@ void Helper::getModeData(int modeNum, int32_t *pData)//ui slot
  **************************************************/
 void Helper::timerEvent ( QTimerEvent * event )
 {
-    QString msg = QDateTime::currentDateTime().toString(" yyyy-MM-dd hh:mm:ss");
+    QString msg = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+
 
     //开始获取数据
     for (int i = 0; i < deviceOptList.size(); i++){

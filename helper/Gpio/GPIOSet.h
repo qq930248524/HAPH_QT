@@ -13,6 +13,7 @@
 #define Beeper  117
 #define Door    115
 #define AC_DC   51
+#define G3      60
 //enabel 485 read/write
 #define UART_READ   0
 #define UART_WRIT   1

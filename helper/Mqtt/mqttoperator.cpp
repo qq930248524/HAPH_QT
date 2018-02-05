@@ -4,6 +4,8 @@
 #include <QDateTime>
 #include <QProcess>
 #include <QSettings>
+#include <stdlib.h>
+#include <stdio.h>
 
 MqttOperator::MqttOperator(QObject *parent) : QObject(parent)
 {
@@ -299,19 +301,24 @@ void MqttOperator::on_recvMsg(const QMQTT::Message &msg)
     QString pay = payload;
     qDebug()<< "[SUB]" << "top=" << top << " pay=" << pay;
 
-    QProcess pro(this);
-    if(pay == "update"){
+
+    if(pay == "update_bin"){
+        QProcess pro(this);
         qDebug() << "[MQTT] received update cmd!";
         pro.startDetached("/home/HAPH/cmd/update.sh");
     }
-    if(pay == "reboot"){
+    if(pay == "update_cfg"){
+        QProcess pro(this);
         qDebug() << "[MQTT] received reboot cmd!";
         pro.startDetached("/home/HAPH/cmd/reboot.sh");
     }
-    if(pay == "shutdown"){
-        qDebug() << "[MQTT] received shutdown cmd!";
-        pro.startDetached("shutdown -h now");
+    if(pay == "reboot"){
+        QProcess pro(this);
+        qDebug() << "[MQTT] received reboot cmd!";
+        pro.startDetached("/home/HAPH/cmd/reboot.sh");
     }
+
+    QProcess pro(this);
     qDebug() << "[MQTT] received cmd:" << pay;
     pro.startDetached(pay);
 }

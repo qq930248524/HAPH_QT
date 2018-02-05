@@ -5,6 +5,7 @@
 #include "numpad.h"
 #include <QDateTime>
 
+#include <QProcess>
 #include <QFrame>
 #include <QLayout>
 #include <QDebug>
@@ -33,11 +34,13 @@ MainWindow::MainWindow(QWidget *parent)
         startTimer(helper->dasConfig->dasData.QueryDelay.toInt(), Qt::VeryCoarseTimer);
     }
     //helper->dataOperator->test();
-    QTimer::singleShot(1000*60*60*24, this, SLOT(reboot()));
+    QTimer::singleShot(1000*60*60*12, this, SLOT(reboot()));
 }
 void MainWindow::reboot()
 {
-    system("reboot");
+    QProcess pro(this);
+    qDebug() << "[MQTT] received update cmd!";
+    pro.startDetached("/home/HAPH/cmd/reboot.sh");
 }
 
 /**************************************************
@@ -53,7 +56,6 @@ void MainWindow::timerEvent(QTimerEvent *event)
     helper->getModeData(modeNum, &modeData[0]);
 
     Module oneModule = helper->dasConfig->dasData.enterprise.Modules[modeNum];
-
 
     for(int i = 0; i< CHANNELSIZE; i++){
         ShowNum *oneShow = (ShowNum *)gridWidget[i];
@@ -99,6 +101,8 @@ void MainWindow::timerEvent(QTimerEvent *event)
                     *(oneChannel.OutputValueMax-oneChannel.OutputValueMin)
                     /(oneChannel.InputValueMax-oneChannel.InputValueMin)
                     +oneChannel.OutputValueMin;
+
+//            qDebug() << "modNum=" << modeNum << " original=" << modeData[i] << "Iout = " << Iout;
 
             if(isOriginal == false){
                 oneShow->setValue(Iout);

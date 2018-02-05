@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
     qDebug("======================================================");
 
     //设置看门狗
-//    WatchDog watchDog;
-//    watchDog.startWatchDog();
+    WatchDog watchDog;
+    watchDog.startWatchDog();
 
     //设置字体
     int id = QFontDatabase::addApplicationFont("/lib/fonts/DroidSansFallback.ttf");

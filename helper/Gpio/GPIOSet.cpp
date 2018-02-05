@@ -37,7 +37,6 @@ bool GPIOset::initUart()
 #ifndef ARM
     return false;
 #endif
-
     int ret = 0;
     ret += gpio_export(UART2);
     ret += gpio_set_dir(UART2, "out");
@@ -49,6 +48,8 @@ bool GPIOset::initUart()
     ret += gpio_set_edge(AC_DC, "both");
     ret += gpio_export(Beeper);
     ret += gpio_set_dir(Beeper, "out");
+    ret += gpio_export(G3);
+    ret += gpio_set_dir(G3,     "out");
 
     if(ret != 0){
         qCritical() << LABEL + "gpio初始化错误 ! ";
@@ -56,6 +57,7 @@ bool GPIOset::initUart()
     }
     gpio_set_value(UART2, UART_READ);
     gpio_set_value(UART4, UART_READ);
+    gpio_set_value(G3, 1);
 
     return true;
 }

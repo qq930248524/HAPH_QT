@@ -36,9 +36,9 @@ void NumPad::enter()
 {
     done(Accepted);//TODO
 
-//    if(mmm == "000000"){
-//        done(Accepted);
-//    }else{
-//        done(Rejected);
-//    }
+    if(mmm == "000000"){
+        done(Accepted);
+    }else{
+        done(Rejected);
+    }
 }
